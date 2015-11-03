@@ -11,7 +11,7 @@
 
 String local_link = "/temphumi.php";
 
-ESPHB esp;
+ESPHB esp(ALERT_LED);
 DHT dht(DHTPIN, DHTTYPE, 11);
 // Create wifi server
 WiFiServer server(80);
@@ -34,7 +34,7 @@ void setup() {
   esp.wifi_connect();
     
   pinMode(ALERT_LED, OUTPUT);
-  esp.LedOn(ALERT_LED);
+  esp.LedOn();
 
   server.begin();    // Start the server
   Serial.println("Server started");
@@ -51,7 +51,7 @@ void loop() {
       isalert = esp.CheckArlert(&respone);  
     }
     // Blink led alert
-    if(isalert)  esp.LedBlink(ALERT_LED,300); else esp.LedOff(ALERT_LED); 
+    if(isalert)  esp.LedBlink(300); else esp.LedOff(); 
 
     WiFiClient client = server.available(); // Check if a client has connected
     if (!client) {

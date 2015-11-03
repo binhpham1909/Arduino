@@ -2,7 +2,9 @@
 ////////////////////////////////////////
 ///  Group function Write to EEPROM  ///
 ////////////////////////////////////////
-
+ESPHB::ESPHB(unsigned char _ledpin){
+	ledpin=_ledpin;
+};
 void ESPHB::StoreStart(void){
 	EEPROM.begin(_EEPROM_SIZE_);
 };
@@ -210,13 +212,18 @@ void ESPHB::wifi_connect(void){
 
 // Event when ESP8266 server receive request
 void ESPHB::HttpServerEvent(String *request,String *respone){
-	String command,ckey;
+	if(!apmode){
+		jsonEncode(ONEJSON, respone,"result", "Not allow");
+		return;
+	}
+	String cssid,cpassword,ckey;
 	GETValue(request,"key",&ckey);
-	GETValue(request,"command",&command);
-	if(ckey==key){
-		if(command=="status"){	// Add status content at here
-//			jsonEncode(ONEJSON,respone,"status","online");
-		}
+	GETValue(request,"ssid",&cssid);
+	GETValue(request,"password",&cpassword);
+	if((ckey==key)&&(cssid.length()>4)&&(cpassword.length()>4)){
+			StoreSsid(cssid);
+			StorePassword(cpassword);
+			jsonEncode(ONEJSON,respone,"result","succes change ssid to: "+cssid+"\n password to: "+cpassword);
 	}
 }
 // Event when ESP8266 server receive request 
@@ -339,20 +346,20 @@ boolean ESPHB::pin_value(String _value){	// Get pin value from string to boolean
 	if(_value=="ON"){return HIGH;}else if(_value=="OFF"){return LOW;};
 }
 // Blink led
-void ESPHB::LedBlink(unsigned char _pin, unsigned long _interval){
+void ESPHB::LedBlink(unsigned long _interval){
 	if(Timer(&last_blink, _interval)){
 		if (LedState == LOW)
 			LedState = HIGH;  // Note that this switches the LED *off*
 		else if(LedState == HIGH)
 			LedState = LOW;   // Note that this switches the LED *on*
-		digitalWrite(_pin, LedState);         
+		digitalWrite(ledpin, LedState);         
     }
 }
-void ESPHB::LedOn(unsigned char _pin){
-	digitalWrite(_pin, HIGH);         
+void ESPHB::LedOn(void){
+	digitalWrite(ledpin, HIGH);         
 }
-void ESPHB::LedOff(unsigned char _pin){
-	digitalWrite(_pin, LOW);         
+void ESPHB::LedOff(void){
+	digitalWrite(ledpin, LOW);         
 }
 boolean ESPHB::Timer(unsigned long *_last_time, unsigned long _interval){
 	unsigned long time_now=millis();

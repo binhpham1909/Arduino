@@ -93,6 +93,7 @@ void getDecode(request *s, String http_rq);
 class ESPHB	// class chua cac ham xu ly cua thu vien
 {
 	public:
+		ESPHB(unsigned char _ledpin);
 		void StoreStart(void);	// Set debug mode on or off
 		void set_debug(boolean _debug);	// Set debug mode on or off
 		boolean StoreString(int address,int max_len,String value);	// Save String to EEPROM, return 1 if success, 0 if failure
@@ -128,14 +129,15 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
 		boolean toggle_pin(String _pinname, String _value);
 		unsigned char get_pin(String _pin);
 		boolean pin_value(String _value);
-		void LedBlink(unsigned char _pin, unsigned long _interval);
-		void LedOn(unsigned char _pin);
-		void LedOff(unsigned char _pin);
+		void LedBlink(unsigned long _interval);
+		void LedOn();
+		void LedOff();
 		boolean Timer(unsigned long *_last_time, unsigned long _interval);
 		
 		void SerialEvent(void);
 	private:
 		boolean isdebug;
+		unsigned char ledpin;
 		boolean firststart;
 		boolean ipstatic;
 		boolean	apmode=false;
