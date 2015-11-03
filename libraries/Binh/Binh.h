@@ -115,6 +115,8 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
 		void read_configs(void);
 		
 		void wifi_connect(void);	// Connect to wifi, return 1 if connected, 0 if fail
+		void wifi_reconnect(void);
+		void wifi_apmode(void);
 		
 		void HttpServerEvent(String *request,String *respone);
 		boolean CheckArlert(String *request);
@@ -141,6 +143,7 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
 		boolean firststart;
 		boolean ipstatic;
 		boolean	apmode=false;
+		boolean reconnect=false;
 		unsigned char	wifi_connect_timeout=60;
 		String	serial;
 		String	ssid;
@@ -163,5 +166,6 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
 		String	HTTP_header="\r\nConnection: close\r\nCache-Control: max-age=0\r\nAccept: text/html,text/plain\r\nUser-Agent: Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) coc_coc_browser/50.2.175 Chrome/44.2.2403.175 Safari/537.36\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: en-US,en\r\n\r\n";
 //		String	HTTP_header_ok="HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/json\r\nUser-Agent: Wifi-switch\r\nConnection: close\r\n\r\n";
 		String HTTP_notfound="";
+		const char *appassword = "hbinvent";
 };
 #endif

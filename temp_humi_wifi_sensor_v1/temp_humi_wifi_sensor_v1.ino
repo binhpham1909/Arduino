@@ -30,10 +30,8 @@ void setup() {
   dht.begin();
   esp.StoreStart();
   esp.read_configs();
-  WiFi.mode(WIFI_STA);
   esp.wifi_connect();
-    
-  pinMode(ALERT_LED, OUTPUT);
+  esp.wifi_apmode(); 
   esp.LedOn();
 
   server.begin();    // Start the server
@@ -42,7 +40,7 @@ void setup() {
 
 void loop() {
     esp.SerialEvent();
-    if(WiFi.status() != WL_CONNECTED){esp.wifi_connect();}
+    esp.wifi_reconnect();
     // Read dht every 5s
     if(esp.Timer(&last_read_dht,5000)){  read_dht(); }
     // send temp, humility to server

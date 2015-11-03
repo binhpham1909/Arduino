@@ -4,6 +4,7 @@
 ////////////////////////////////////////
 ESPHB::ESPHB(unsigned char _ledpin){
 	ledpin=_ledpin;
+	pinMode(ledpin, OUTPUT);
 };
 void ESPHB::StoreStart(void){
 	EEPROM.begin(_EEPROM_SIZE_);
@@ -179,14 +180,13 @@ void ESPHB::read_configs(void){
 
 // Connect to wifi
 void ESPHB::wifi_connect(void){
+		WiFi.mode(WIFI_STA);
 		connected=false;
 		unsigned char timeout=0;	// khởi tạo biến timeout
 		char sta_ssid[ssid.length()+1];	// chuyển đổi String ssid, password sang char array
 		char sta_password[password.length()+1];
 		ssid.toCharArray(sta_ssid, ssid.length()+1);
 		password.toCharArray(sta_password, password.length()+1);
-		sta_ssid[ssid.length()+1]=0;
-		sta_password[password.length()+1]=0;
 		if(isdebug){Serial.println(F("Connecting to "));};
 		if(isdebug){Serial.print(F("SSID: "));Serial.println(sta_ssid);};
 		if(isdebug){Serial.print(F("PASSWORD: "));Serial.println(sta_password);};	
@@ -205,7 +205,20 @@ void ESPHB::wifi_connect(void){
 		if(isdebug&&connected){Serial.print("Connected to "+ssid);};
 		if(isdebug&&!connected){Serial.print("Failed connect to "+ssid);};
 };
-
+void ESPHB::wifi_reconnect(void){
+	if(!apmode&&(WiFi.status() != WL_CONNECTED)){
+		wifi_connect();
+	}
+}
+void ESPHB::wifi_apmode(void){
+	if(apmode){
+		char len=serial.length()+1;
+		char apssid[len];	// chuyển đổi String ssid, password sang char array
+		serial.toCharArray(apssid,len);
+		WiFi.mode(WIFI_AP);
+		WiFi.softAP(apssid, appassword);
+	}
+}
 //////////////////////////////////////
 ///     Group function for HTML	   ///
 //////////////////////////////////////
