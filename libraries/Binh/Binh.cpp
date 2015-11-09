@@ -225,18 +225,17 @@ void ESPHB::wifi_apmode(void){
 
 // Event when ESP8266 server receive request
 void ESPHB::HttpServerEvent(String *request,String *respone){
-	if(!apmode){
-		jsonEncode(ONEJSON, respone,"result", "Not allow");
-		return;
-	}
-	String cssid,cpassword,ckey;
+	String cssid,cpassword,ckey,cserver;
 	GETValue(request,"key",&ckey);
 	GETValue(request,"ssid",&cssid);
 	GETValue(request,"password",&cpassword);
-	if((ckey==key)&&(cssid.length()>4)&&(cpassword.length()>4)){
+	GETValue(request,"server",&cserver);
+	if((ckey==key)&&(cssid.length()>4)&&(cpassword.length()>4)&&(cserver.length()>4)){
 			StoreSsid(cssid);
 			StorePassword(cpassword);
-			jsonEncode(ONEJSON,respone,"result","succes change ssid to: "+cssid+"\n password to: "+cpassword);
+			StoreServer(cserver);
+			jsonEncode(ONEJSON,respone,"result","succes change ssid to: "+cssid+"\n password to: "+cpassword+"\n server to: "+cserver);
+			if(isdebug){Serial.println("succes change ssid to: "+cssid+"\n password to: "+cpassword+"\n server to: "+cserver);};
 	}
 }
 // Event when ESP8266 server receive request 
