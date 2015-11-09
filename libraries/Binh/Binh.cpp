@@ -233,7 +233,7 @@ void ESPHB::HttpServerEvent(String *request,String *respone){
 	GETValue(request,"key",&ckey);
 	GETValue(request,"ssid",&cssid);
 	GETValue(request,"password",&cpassword);
-	if((cssid.length()>4)&&(cpassword.length()>4)){
+	if((ckey==key)&&(cssid.length()>4)&&(cpassword.length()>4)){
 			StoreSsid(cssid);
 			StorePassword(cpassword);
 			jsonEncode(ONEJSON,respone,"result","succes change ssid to: "+cssid+"\n password to: "+cpassword);

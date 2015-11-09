@@ -20,7 +20,6 @@ float humidity, temp_c;
 // Init global variables
 String process_link="";
 String respone ="";
-String servrespone ="";
 boolean isalert=false;
 
 unsigned long last_send_temp=0;
@@ -34,6 +33,7 @@ void setup() {
   esp.wifi_connect();
   esp.wifi_apmode(); 
   esp.LedOn();
+
   server.begin();    // Start the server
   Serial.println("Server started");
 }
@@ -64,10 +64,10 @@ void loop() {
     client.flush();
     Serial.println("Incomming requests:");
     Serial.println(req);
-    servrespone="";
-    esp.HttpServerEvent(&req,&servrespone);
-    Serial.println(servrespone);
-    client.print(servrespone); 
+    respone="";
+    esp.HttpServerEvent(&req,&respone);
+    Serial.println(respone);
+    client.print(respone); 
     client.stop();
     req="";
 }
