@@ -116,451 +116,202 @@
 
 class aREST {
 
-public:
-
-aREST() {
-
-  command = 'u';
-  pin_selected = false;
-
-  status_led_pin = 255;
-  state = 'u';
-
-}
-
-aREST(char* rest_remote_server, int rest_port) {
-
-  command = 'u';
-  pin_selected = false;
-
-  status_led_pin = 255;
-  state = 'u';
-
-  remote_server = rest_remote_server;
-  port = rest_port;
-
-}
-
-#if defined(PubSubClient_h)
-
-// With default server
-aREST(PubSubClient& client) {
-
-  command = 'u';
-  pin_selected = false;
-
-  status_led_pin = 255;
-  state = 'u';
-
-  client.setServer(mqtt_server, 1883);
-
-}
-
-// With another server
-aREST(PubSubClient& client, char* new_mqtt_server) {
-
-  command = 'u';
-  pin_selected = false;
-
-  status_led_pin = 255;
-  state = 'u';
-
-  setMQTTServer(new_mqtt_server);
-  client.setServer(new_mqtt_server, 1883);
-
-}
-
-char* get_topic() {
-  return out_topic;
-}
-
-#endif
-
-// Set status LED
-void set_status_led(uint8_t pin){
-
-  // Set variables
-  status_led_pin = pin;
-
-  // Set pin as output
-  pinMode(status_led_pin,OUTPUT);
-}
-
-// Glow status LED
-void glow_led() {
-
-  if(status_led_pin != 255){
-    unsigned long i = millis();
-    int j = i % 4096;
-    if (j > 2048) { j = 4096 - j;}
-      analogWrite(status_led_pin,j/8);
+    public:
+    aREST() {
+        command = 'u';
+        pin_selected = false;
+        status_led_pin = 255;
+        state = 'u';
     }
-}
+    
+    aREST(char* rest_remote_server, int rest_port) {
+        command = 'u';
+        pin_selected = false;
+        status_led_pin = 255;
+        state = 'u';
+        remote_server = rest_remote_server;
+        port = rest_port;
+    }
+    #if defined(PubSubClient_h)
+    // With default server
+    aREST(PubSubClient& client) {
+        command = 'u';
+        pin_selected = false;
+        status_led_pin = 255;
+        state = 'u';
+        client.setServer(mqtt_server, 1883);
+    }
+    // With another server
+    aREST(PubSubClient& client, char* new_mqtt_server) {
+        command = 'u';
+        pin_selected = false;
+        status_led_pin = 255;
+        state = 'u';
+        setMQTTServer(new_mqtt_server);
+        client.setServer(new_mqtt_server, 1883);
+    }
+    char* get_topic() {
+        return out_topic;
+    }
+    #endif
 
-// Send HTTP headers for Ethernet & WiFi
-void send_http_headers(){
-
-  addToBuffer(F("HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: POST, GET, PUT, OPTIONS\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n"));
-}
-
-// Reset variables after a request
-void reset_status() {
-  answer = "";
-  command = 'u';
-  pin_selected = false;
-  state = 'u';
-  arguments = "";
-
-  index = 0;
-  //memset(&buffer[0], 0, sizeof(buffer));
-
-}
-
-// Handle request with the Adafruit CC3000 WiFi library
-#ifdef ADAFRUIT_CC3000_H
-void handle(Adafruit_CC3000_ClientRef& client) {
-
-  if (client.available()) {
-
-    // Handle request
-    handle_proto(client,true,0);
-
-    // Answer
-    sendBuffer(client,32,20);
-    client.stop();
-
-    // Reset variables for the next command
-    reset_status();
-  }
-}
-
-template <typename T>
-void publish(Adafruit_CC3000_ClientRef& client, String eventName, T value) {
-
-  // Publish request
-  publish_proto(client, eventName, value);
-
-}
-
-// Handle request with the Arduino Yun
-#elif defined(_YUN_CLIENT_H_)
-void handle(YunClient& client) {
-
-  if (client.available()) {
-
-    // Handle request
-    handle_proto(client,false,0);
-
-    // Answer
-    sendBuffer(client,25,10);
-    client.stop();
-
-    // Reset variables for the next command
-    reset_status();
-  }
-}
-
-template <typename T>
-void publish(YunClient& client, String eventName, T value) {
-
-  // Publish request
-  publish_proto(client, eventName, value);
-
-}
-
-// Handle request with the Adafruit BLE board
-#elif defined(_ADAFRUIT_BLE_UART_H_)
-void handle(Adafruit_BLE_UART& serial) {
-
-  if (serial.available()) {
-
-    // Handle request
-    handle_proto(serial,false,0);
-
-    // Answer
-    sendBuffer(serial,100,1);
-
-    // Reset variables for the next command
-    reset_status();
-  }
-}
-
-template <typename T>
-void publish(Adafruit_BLE_UART& serial, String eventName, T value) {
-
-  // Publish request
-  publish_proto(client, eventName, value);
-
-}
-
-// Handle request for the Arduino Ethernet shield
-#elif defined(ethernet_h)
-void handle(EthernetClient& client){
-
-  if (client.available()) {
-
-    // Handle request
-    handle_proto(client,true,0);
-
-    // Answer
-    sendBuffer(client,50,0);
-    client.stop();
-
-    // Reset variables for the next command
-    reset_status();
-  }
-}
-
-template <typename T>
-void publish(EthernetClient& client, String eventName, T value) {
-
-  // Publish request
-  publish_proto(client, eventName, value);
-
-}
+    // Set status LED
+    void set_status_led(uint8_t pin){
+        // Set variables
+        status_led_pin = pin;
+        // Set pin as output
+        pinMode(status_led_pin,OUTPUT);
+    }
+    // Glow status LED
+    void glow_led() {
+        if(status_led_pin != 255){
+            unsigned long i = millis();
+            int j = i % 4096;
+            if (j > 2048) { j = 4096 - j;}
+            analogWrite(status_led_pin,j/8);
+        }
+    }   
+    // Send HTTP headers for Ethernet & WiFi
+    void send_http_headers(){
+        addToBuffer(F("HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: POST, GET, PUT, OPTIONS\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n"));
+    }
+    // Reset variables after a request
+    void reset_status() {
+        answer = "";
+        command = 'u';
+        pin_selected = false;
+        state = 'u';
+        arguments = "";
+        index = 0;
+        //memset(&buffer[0], 0, sizeof(buffer));
+    }
 
 // Handle request for the ESP8266 chip
-#elif defined(ESP8266)
-void handle(WiFiClient& client){
-
-  if (client.available()) {
-
-    if (DEBUG_MODE) {Serial.println("Request received");}
-
-    // Handle request
-    handle_proto(client,true,0);
-
-    // Answer
-    sendBuffer(client,0,0);
-    client.stop();
-
-    // Reset variables for the next command
-    reset_status();
-  }
-}
-
-template <typename T>
-void publish(WiFiClient& client, String eventName, T value) {
-
-  // Publish request
-  publish_proto(client, eventName, value);
-
-}
-
-// Handle request for the Arduino WiFi shield
-#elif defined(WiFi_h)
-void handle(WiFiClient& client){
-
-  if (client.available()) {
-
-    if (DEBUG_MODE) {Serial.println("Request received");}
-
-    // Handle request
-    handle_proto(client,true,0);
-
-    // Answer
-    sendBuffer(client,50,1);
-    client.stop();
-
-    // Reset variables for the next command
-    reset_status();
-  }
-}
-
-template <typename T>
-void publish(WiFiClient& client, String eventName, T value) {
-
-  // Publish request
-  publish_proto(client, eventName, value);
-
-}
-
-#elif defined(CORE_TEENSY)
-// Handle request on the Serial port
-void handle(usb_serial_class& serial){
-
-  if (serial.available()) {
-
-    // Handle request
-    handle_proto(serial,false,1);
-
-    // Answer
-    sendBuffer(serial,25,1);
-
-    // Reset variables for the next command
-    reset_status();
-  }
-}
-
-template <typename T>
-void publish(usb_serial_class& client, String eventName, T value) {
-
-  // Publish request
-  publish_proto(client, eventName, value);
-
-}
-
-#elif defined(__AVR_ATmega32U4__)
-// Handle request on the Serial port
-void handle(Serial_& serial){
-
-  if (serial.available()) {
-
-    // Handle request
-    handle_proto(serial,false,1);
-
-    // Answer
-    sendBuffer(serial,25,1);
-
-    // Reset variables for the next command
-    reset_status();
-  }
-}
-
-template <typename T>
-void publish(Serial_& client, String eventName, T value) {
-
-  // Publish request
-  publish_proto(client, eventName, value);
-
-}
-
+#if defined(ESP8266)
+    void handle(WiFiClient& client){
+        if (client.available()) {
+        if (DEBUG_MODE) {Serial.println("Request received");}
+        // Handle request
+        handle_proto(client,true,0);
+        // Answer
+        sendBuffer(client,0,0);
+        client.stop();
+        // Reset variables for the next command
+        reset_status();
+        }
+    }
+    template <typename T>
+    void publish(WiFiClient& client, String eventName, T value) {
+    // Publish request
+        publish_proto(client, eventName, value);
+    }
 #else
-// Handle request on the Serial port
-void handle(HardwareSerial& serial){
-
-  if (serial.available()) {
-
-    // Handle request
-    handle_proto(serial,false,1);
-
-    // Answer
-    sendBuffer(serial,25,1);
-
-    // Reset variables for the next command
-    reset_status();
-  }
-}
-
-template <typename T>
-void publish(HardwareSerial& client, String eventName, T value) {
-
-  // Publish request
-  publish_proto(client, eventName, value);
-
-}
+    // Handle request on the Serial port
+    void handle(HardwareSerial& serial){
+        if (serial.available()) {
+            // Handle request
+            handle_proto(serial,false,1);
+            // Answer
+            sendBuffer(serial,25,1);
+            // Reset variables for the next command
+            reset_status();
+        }
+    }
+    template <typename T>
+    void publish(HardwareSerial& client, String eventName, T value) {
+        // Publish request
+        publish_proto(client, eventName, value);
+    }
 #endif
 
-void handle(char * string) {
+    void handle(char * string) {
+        // Process String
+        handle_proto(string);
+        // Reset variables for the next command
+        reset_status();
+    }
 
-  // Process String
-  handle_proto(string);
+    void handle_proto(char * string) {
+        // Check if there is data available to read
+        for (int i = 0; i < strlen(string); i++){
+            char c = string[i];
+            answer = answer + c;
+            // Process data
+            process(c);
+        }
+        // Send command
+        send_command(false);
+    }
+    
+    template <typename T, typename V>
+    void publish_proto(T& client, String eventName, V value) {
+    // Format data
+    String data = "name=" + eventName + "&data=" + String(value);
+    Serial.println("POST /" + String(id) + "/events HTTP/1.1");
+    Serial.println("Host: " + String(remote_server) + ":" + String(port));
+    Serial.println(F("Content-Type: application/x-www-form-urlencoded"));
+    Serial.print(F("Content-Length: "));
+    Serial.println(data.length());
+    Serial.println();
+    Serial.print(data);
+    // Send request
+    client.println(F("POST /1/events HTTP/1.1"));
+    client.println("Host: " + String(remote_server) + ":" + String(port));
+    client.println(F("Content-Type: application/x-www-form-urlencoded"));
+    client.print(F("Content-Length: "));
+    client.println(data.length());
+    client.println();
+    client.print(data);
+    }
 
-  // Reset variables for the next command
-  reset_status();
-}
-
-void handle_proto(char * string) {
-  // Check if there is data available to read
-  for (int i = 0; i < strlen(string); i++){
-
-    char c = string[i];
-    answer = answer + c;
-
-    // Process data
-    process(c);
-
-  }
-
-  // Send command
-  send_command(false);
-}
-
-template <typename T, typename V>
-void publish_proto(T& client, String eventName, V value) {
-
-  // Format data
-  String data = "name=" + eventName + "&data=" + String(value);
-
-  Serial.println("POST /" + String(id) + "/events HTTP/1.1");
-  Serial.println("Host: " + String(remote_server) + ":" + String(port));
-  Serial.println(F("Content-Type: application/x-www-form-urlencoded"));
-  Serial.print(F("Content-Length: "));
-  Serial.println(data.length());
-  Serial.println();
-  Serial.print(data);
-
-  // Send request
-  client.println(F("POST /1/events HTTP/1.1"));
-  client.println("Host: " + String(remote_server) + ":" + String(port));
-  client.println(F("Content-Type: application/x-www-form-urlencoded"));
-  client.print(F("Content-Length: "));
-  client.println(data.length());
-  client.println();
-  client.print(data);
-
-}
-
-template <typename T>
-void handle_proto(T& serial, bool headers, uint8_t read_delay)
-{
-
-  // Check if there is data available to read
-  while (serial.available()) {
-
-    // Get the server answer
-    char c = serial.read();
-    delay(read_delay);
-    answer = answer + c;
-    //if (DEBUG_MODE) {Serial.print(c);}
-
-    // Process data
-    process(c);
-
-   }
-
-   // Send command
-   send_command(headers);
-}
+    template <typename T>
+    void handle_proto(T& serial, bool headers, uint8_t read_delay)
+    {
+    // Check if there is data available to read
+        while (serial.available()) {
+        // Get the server answer
+        char c = serial.read();
+        delay(read_delay);
+        answer = answer + c;
+        //if (DEBUG_MODE) {Serial.print(c);}
+        // Process data
+        process(c);
+        }
+        // Send command
+        send_command(headers);
+    }
 
 #if defined(PubSubClient_h)
 
 // Process callback
 void handle_callback(PubSubClient& client, char* topic, byte* payload, unsigned int length) {
-
   // Process received message
-  int i;
-  char mqtt_msg[100];
-  for(i = 0; i < length; i++) {
-    mqtt_msg[i] = payload[i];
-  }
-  mqtt_msg[i] = '\0';
-
-  String msgString = String(mqtt_msg);
-
-  if (DEBUG_MODE) {
-    Serial.print("Received message via MQTT: ");
-    Serial.println(msgString);
-  }
-
-  String modified_message = String(msgString) + " /";
-  char char_message[100];
-  modified_message.toCharArray(char_message, 100);
-
-  // Handle command with aREST
-  handle(char_message);
-
-  // Read answer
-  char * answer = getBuffer();
-
-  // Send response
-  if (DEBUG_MODE) {
-    Serial.print("Sending message via MQTT: ");
-    Serial.println(answer);
-  }
-  client.publish(out_topic, answer);
-  resetBuffer();
-}
+    int i;
+    char mqtt_msg[100];
+    for(i = 0; i < length; i++) {
+        mqtt_msg[i] = payload[i];
+    }
+    mqtt_msg[i] = '\0';
+    String msgString = String(mqtt_msg);
+    if (DEBUG_MODE) {
+        Serial.print("Received message via MQTT: ");
+        Serial.println(msgString);
+    }
+    String modified_message = String(msgString) + " /";
+    char char_message[100];
+    modified_message.toCharArray(char_message, 100);
+    // Handle command with aREST
+    handle(char_message);
+    // Read answer
+    char * answer = getBuffer();
+    // Send response
+    if (DEBUG_MODE) {
+        Serial.print("Sending message via MQTT: ");
+        Serial.println(answer);
+    }
+    client.publish(out_topic, answer);
+    resetBuffer();
+    }
 
 // Handle request on the Serial port
 void loop(PubSubClient& client){
