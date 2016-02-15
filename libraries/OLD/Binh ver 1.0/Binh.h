@@ -60,15 +60,24 @@ void getDecode(request *s, String http_rq);
 #define _DEBUG_ 2		// Chon setup static IP cho thiet bi
 #define	_WIFI_CONN_TIMEOUT_	3	// timeout connect to wifi
 
-#define _SERIAL_ 10	// Block dia chi Serial thiet bi 12 byte, 1 byte chieu dai, 1 byte max, 10 byte noi dung
-#define _KEY_	22	// Block dia chi Serial thiet bi 12 byte, 1 byte chieu dai, 1 byte max, 10 byte noi dung
-#define _SSID_	44	// Block dia chi Serial thiet bi 34 byte, 1 byte chieu dai, 1 byte max, 32 byte noi dung
-#define _PASSWORD_	78	// Block dia chi Serial thiet bi 34 byte, 1 byte chieu dai, 1 byte max, 32 byte noi dung
-#define _IP_	112	// Block dia chi luu static IP 4 byte noi dung
-#define _GATEWAY_	116	// Block dia chi luu static gateway 4 byte noi dung
-#define _MASK_	120		// Block dia chi luu static gateway 4 byte noi dung
-#define _ADMIN_	124		// Block dia chi luu password admin service 12 byte, 1 byte chieu dai, 1 byte max, 10 byte noi dung
-#define _SERVER_	136		// Block dia chi luu password admin service 46 byte, 1 byte chieu dai, 1 byte max, 44 byte noi dung
+#define _SERIAL_ 10	// Block dia chi Serial thiet bi 12byte, 1 byte chieu dai, 10 byte noi dung, 1 byte \0
+#define _SERIAL_LEN_ 12	// max 11 = 10 byte noi dung + 1 byte \0
+#define _KEY_	22
+#define _KEY_LEN_ 12	// Block dia chi key thiet bi 12byte, 1 byte chieu dai, 10 byte noi dung, 1 byte \0
+#define _SSID_	44
+#define _SSID_LEN_ 34	// Block dia chi luu ssid 34byte, 1 byte chieu dai, 32 byte noi dung, 1 byte \0
+#define _PASSWORD_	78
+#define _PASSWORD_LEN_ 34	// Block dia chi luu password wifi 34byte, 1 byte chieu dai, 32 byte noi dung, 1 byte \0
+#define _IP_	112
+#define _IP_LEN_ 4	// Block dia chi luu static IP 5 byte, 1 byte chieu dai, 4 byte noi dung
+#define _GATEWAY_	116
+#define _GATEWAY_LEN_ 4	// Block dia chi luu static gateway 5 byte, 1 byte chieu dai, 4 byte noi dung
+#define _MASK_	120
+#define _MASK_LEN_ 4	// Block dia chi luu static gateway 5 byte, 1 byte chieu dai, 4 byte noi dung
+#define _ADMIN_	124		// Block dia chi luu password admin service 12byte, 1 byte chieu dai, 10 byte noi dung, 1 byte \0
+#define _ADMIN_LEN_ 12	
+#define _SERVER_	136		// Block dia chi luu server address service 44byte, 1 byte chieu dai, 42 byte noi dung, 1 byte \0
+#define _SERVER_LEN_ 44	
 
 // Json encode
 #define	ONEJSON	1
@@ -87,7 +96,7 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
 		ESPHB(unsigned char _ledpin);
 		void StoreStart(void);	// Set debug mode on or off
 		void set_debug(boolean _debug);	// Set debug mode on or off
-		boolean StoreString(int address,String value);	// Save String to EEPROM, return 1 if success, 0 if failure
+		boolean StoreString(int address,int max_len,String value);	// Save String to EEPROM, return 1 if success, 0 if failure
 		void StoreStringIP(int address,String IPvalue);	// Save String IP eg: 192.168.1.10 to EEPROM
 		void StoreIP(int address,IPAddress ip_tosave);	// Save IPAddress IP eg: (192,168,1,10) to EEPROM
 		void StoreFloat(int address,float value);	// Save float to EEPROM

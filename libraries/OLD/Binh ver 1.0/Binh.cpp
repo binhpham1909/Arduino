@@ -16,15 +16,14 @@ void ESPHB::set_debug(boolean _debug){
 	EEPROM.commit();
 }
 // save string
-boolean ESPHB::SaveEEPROM(int address,String value){
-	int len=value.length();
-	int max_len=EEPROM.read(address+1);
+boolean ESPHB::StoreString(int address,int max_len,String value){
+	int len=value.length()+1;
 	if(max_len>=len)	{
 		char arr[len];  // Init an array
 		value.toCharArray(arr, len);  // Convert string to array
 		EEPROM.write(address, len);
 		for(int i=0;i<len;i++){		// write new data
-			EEPROM.write(address + 2 + i, arr[i]);
+			EEPROM.write(address + 1 + i, arr[i]);
 		}
 		EEPROM.commit();
 		return true;
