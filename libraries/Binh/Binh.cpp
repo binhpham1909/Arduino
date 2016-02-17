@@ -9,6 +9,9 @@ ESPHB::ESPHB(unsigned char _ledpin){
 void ESPHB::EEPROMStart(void){
 	EEPROM.begin(_EEPROM_SIZE_);
 };
+void ESPHB::EEPROMStop(void){
+	EEPROM.end();
+};
 // Save debug setup
 void ESPHB::set_debug(boolean _debug){
 	if(_debug){EEPROM.write(_DEBUG_, 1);}
@@ -69,6 +72,14 @@ boolean ESPHB::EEPROMSave(int address,byte _byte){
 	EEPROM.write(address, _byte);
 	EEPROM.commit();
 };
+// save boolean: ()
+void ESPHB::EEPROMSave(int address, boolean _value){
+	if(_value)
+        EEPROM.write(address, 1);
+    else
+        EEPROM.write(address, 0);
+	EEPROM.commit();
+};
 // save String IP ex: 192.168.1.2
 void ESPHB::EEPROMSaveStringIP(int address,String IPvalue){
 	IPAddress _ip_tosave;	// khởi tạo struct IPAddress để lưu
@@ -87,7 +98,64 @@ void ESPHB::EEPROMSaveStringIP(int address,String IPvalue){
     EEPROMSave(address,_ip_tosave)
 	EEPROM.commit();
 };
+//////////////////////////////////////
+/// Group function Read to EEPROM  ///
+//////////////////////////////////////
 
+// read boolean
+boolean ESPHB::EEPROMReadBoolean(int address){
+	if(EEPROM.read(address)==1){
+		return 1;
+	}else{
+		return 0;
+	};
+};
+
+// read float
+float ESPHB::EEPROMReadFloat(int address){
+	union{
+		float f;
+		unsigned char bytes[4];
+	} toread;
+	for(int i=0;i<4;i++){
+		EEPROM.read(i + address);
+	}
+	return toread.f;
+};
+// read string
+void ESPHB::EEPROMReadString(int address,String *value){
+	*value="";
+	int len=EEPROM.read(address);
+	for(int i=0;i<len;i++){	// Ingrone \0 at end Char array
+		*value+=char(EEPROM.read(i + address + 2));
+	}
+};
+// read IP
+void ESPHB::EEPROMReadIP(int address,IPAddress *read){
+	for(int i=0;i<4;i++){
+		read[i]=EEPROM.read(i + address);
+	}
+};
+
+// Start up
+void ESPHB::Startup(void){
+    EEPROMStart();
+    DEBUG=EEPROMReadBoolean(_DEBUG_);
+    FIRSTSTART=EEPROMReadBoolean(_FIRST_START_);
+    IPSTATIC=EEPROMReadBoolean(_IP_STATIC_);
+    if(FIRSTSTART)  
+        Restore();  // Set defaults on first startup
+	String _null="";
+	IPAddress _nil=(0,0,0,0);
+	StoreIP(_IP_,_nil);
+	StoreIP(_GATEWAY_,_nil);
+	StoreIP(_MASK_,_nil);
+	EEPROM.write(_FIRST_START_, 0);
+	EEPROM.write(_IP_STATIC_, 0);
+	EEPROM.commit();
+	StoreSsid(_null);
+	StorePassword(_null);
+}
 // Save defaults setup to EEPROM (Restore)
 void ESPHB::Restore(void){
 	String _null="";
@@ -101,43 +169,8 @@ void ESPHB::Restore(void){
 	StoreSsid(_null);
 	StorePassword(_null);
 }
-//////////////////////////////////////
-/// Group function Read to EEPROM  ///
-//////////////////////////////////////
 
-// read boolean
-boolean ESPHB::ReadSBoolean(int address){
-	if(EEPROM.read(address)==1){
-		return 1;
-	}else{
-		return 0;
-	};
-};
-// read float
-float ESPHB::ReadSFloat(int address){
-	union{
-		float f;
-		unsigned char bytes[4];
-	} toread;
-	for(int i=0;i<4;i++){
-		EEPROM.read(i + address);
-	}
-	return toread.f;
-};
-// read string
-void ESPHB::ReadSString(int address,String *value){
-	*value="";
-	int len=EEPROM.read(address);
-	for(int i=0;i<len-1;i++){	// Ingrone \0 at end Char array
-		*value+=char(EEPROM.read(i + address + 1));
-	}
-};
-// read IP
-void ESPHB::ReadSIP(int address,IPAddress *read){
-	for(int i=0;i<4;i++){
-		read[i]=EEPROM.read(i + address);
-	}
-};
+
 
 // read config on startup
 void ESPHB::read_configs(void){

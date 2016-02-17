@@ -55,9 +55,10 @@ void getDecode(request *s, String http_rq);
 
 // EEPROM
 #define _EEPROM_SIZE_ 512		// Lan khoi dong dau tien
-#define _FIRST_START_ 0		// Lan khoi dong dau tien
-#define _IP_STATIC_ 1		// Chon setup static IP cho thiet bi
-#define _DEBUG_ 2		// Chon setup static IP cho thiet bi
+#define _DEBUG_ 0
+#define _FIRST_START_ 1		// Lan khoi dong dau tien
+#define _IP_STATIC_ 2		// Chon setup static IP cho thiet bi
+
 #define	_WIFI_CONN_TIMEOUT_	3	// timeout connect to wifi
 
 #define _SERIAL_ 10	// Block dia chi Serial thiet bi 12 byte, 1 byte chieu dai, 1 byte max, 10 byte noi dung
@@ -129,10 +130,10 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
 		
 		void SerialEvent(void);
 	private:
-		boolean isdebug;
+		boolean DEBUG;
+        boolean IPSTATIC;
+        boolean FIRSTSTART;
 		unsigned char ledpin;
-		boolean firststart;
-		boolean ipstatic;
 		boolean	apmode=false;
 		boolean reconnect=false;
 		unsigned char	wifi_connect_timeout=60;
