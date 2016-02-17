@@ -6,7 +6,7 @@ ESPHB::ESPHB(unsigned char _ledpin){
 	ledpin=_ledpin;
 	pinMode(ledpin, OUTPUT);
 };
-void ESPHB::StoreStart(void){
+void ESPHB::EEPROMStart(void){
 	EEPROM.begin(_EEPROM_SIZE_);
 };
 // Save debug setup
@@ -15,8 +15,9 @@ void ESPHB::set_debug(boolean _debug){
 	else{EEPROM.write(_DEBUG_, 0);};
 	EEPROM.commit();
 }
+
 // save string
-boolean ESPHB::SaveEEPROM(int address,String value){
+boolean ESPHB::EEPROMSave(int address,String value){
 	int len=value.length();
 	int max_len=EEPROM.read(address+1);
 	if(max_len>=len)	{
@@ -31,8 +32,45 @@ boolean ESPHB::SaveEEPROM(int address,String value){
 	}
 	else return false;
 };
+
+// save IPAddress IP ex: (192,168,1,2)
+boolean ESPHB::EEPROMSave(int address,IPAddress ip_tosave){
+    for(char k=0;k<4;k++){
+		EEPROM.write(address+k, ip_tosave[k]);
+    }
+	EEPROM.commit();
+};
+// save float
+void ESPHB::EEPROMSave(int address,float value){
+	union{
+		float f;
+		unsigned char bytes[4];
+	} tosave;
+	tosave.f=value;
+	EEPROM.write(address, tosave.bytes[0]);
+    EEPROM.write(1 + address, tosave.bytes[1]);
+    EEPROM.write(2 + address, tosave.bytes[2]);
+    EEPROM.write(3 + address, tosave.bytes[3]);
+	EEPROM.commit();
+};
+// save int
+void ESPHB::EEPROMSave(int address,int value){
+	union{
+		float i;
+		unsigned char bytes[2];
+	} tosave;
+	tosave.i=value;
+    EEPROM.write(address, tosave.bytes[0]);
+    EEPROM.write(1 + address, tosave.bytes[1]);
+	EEPROM.commit();
+};
+// save byte: ()
+boolean ESPHB::EEPROMSave(int address,byte _byte){
+	EEPROM.write(address, _byte);
+	EEPROM.commit();
+};
 // save String IP ex: 192.168.1.2
-void ESPHB::StoreStringIP(int address,String IPvalue){
+void ESPHB::EEPROMSaveStringIP(int address,String IPvalue){
 	IPAddress _ip_tosave;	// khởi tạo struct IPAddress để lưu
 	int _start=0;	// vị trí xuất phát String IP
     int _dot=IPvalue.indexOf('.');	// vị trí dấu . đầu tiên
@@ -40,60 +78,16 @@ void ESPHB::StoreStringIP(int address,String IPvalue){
     for(char k=0;k<4;k++){
         String ipk=IPvalue.substring(_start,_dot);	// octet 1: từ vị trí xuất phát đến dấu . đầu tiên
         _ip_tosave[k]=ipk.toInt();	// convert String to Int
-		EEPROM.write(address+k, _ip_tosave[k]);
         _start=_dot+1;	// dấu . đầu thành điểm xuất phát
         if(k<3){	
 			_dot=IPvalue.indexOf('.',_start);}
             else{	// tại octet 4(octet cuối) điểm kết thúc là chiều dài String IP(ends)
               _dot=_ends;};
     }
-	EEPROM.commit();
-};
-// save IPAddress IP ex: (192,168,1,2)
-void ESPHB::StoreIP(int address,IPAddress ip_tosave){
-    for(char k=0;k<4;k++){
-		EEPROM.write(address+k, ip_tosave[k]);
-    }
-	EEPROM.commit();
-};
-// save float
-void ESPHB::StoreFloat(int address,float value){
-	union{
-		float f;
-		unsigned char bytes[4];
-	} tosave;
-	tosave.f=value;
-	EEPROM.write(address, 4);
-	for(int i=0;i<4;i++){
-		EEPROM.write(i + address, tosave.bytes[i]);
-	}
+    EEPROMSave(address,_ip_tosave)
 	EEPROM.commit();
 };
 
-// save serial
-boolean ESPHB::StoreSerial(String tosave){
-	return StoreString(_SERIAL_,_SERIAL_LEN_,tosave);
-}
-// save KEY
-boolean ESPHB::StoreKey(String tosave){
-	return StoreString(_KEY_,_KEY_LEN_,tosave);
-}
-// save ssid
-boolean ESPHB::StoreSsid(String tosave){
-	return StoreString(_SSID_,_SSID_LEN_,tosave);
-}
-// save password
-boolean ESPHB::StorePassword(String tosave){
-	return StoreString(_PASSWORD_,_PASSWORD_LEN_,tosave);
-}
-// save admin password
-boolean ESPHB::StoreAdmin(String tosave){
-	return StoreString(_ADMIN_,_ADMIN_LEN_,tosave);
-}
-// save server address
-boolean ESPHB::StoreServer(String tosave){
-	return StoreString(_SERVER_,_SERVER_LEN_,tosave);
-}
 // Save defaults setup to EEPROM (Restore)
 void ESPHB::Restore(void){
 	String _null="";
