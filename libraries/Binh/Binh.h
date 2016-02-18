@@ -38,22 +38,11 @@ void getDecode(request *s, String http_rq);
 #include <ESP8266WebServer.h>
 #include <EEPROM.h>
 
-// EEPROM byte:
-// 0: bien khoi dong - 0: khoi dong lan dau; 1: khoi dong lan sau
-// x0: so ky tu trong chuoi
-// 10-21: num byte of SERIAL  (max 11)
-// 22-43: num byte of KEY  (max 11)
-// 44-77: num byte of ssid  (max 33)
-// 78-111: num byte of password (max 33)
-// 112-115: num byte of static ip (max 4)
-// 116-119: num byte of static gateway (max 4)
-// 120-123: num byte of static mask (max 4)
-// 124-135: num byte of admin key  (max 11)
-// 136-180: num byte of server address  (max 44)
-
-// arrtostr: String var; ga'n: var=arr
-
 // EEPROM
+// EEPROM save string need string size + 2 byte, fisrt byte store len of string, second byte store max len of string, after are bytes of string
+// EEPROM save boolean, byte need 1 byte
+// EEPROM save int need 2 byte
+// EEPROM save float, IPAddress need 4 byte
 #define _EEPROM_SIZE_ 512		// Lan khoi dong dau tien
 #define _DEBUG_ 0
 #define _FIRST_START_ 1		// Lan khoi dong dau tien
@@ -61,15 +50,21 @@ void getDecode(request *s, String http_rq);
 
 #define	_WIFI_CONN_TIMEOUT_	3	// timeout connect to wifi
 
-#define _SERIAL_ 10	// Block dia chi Serial thiet bi 12 byte, 1 byte chieu dai, 1 byte max, 10 byte noi dung
-#define _KEY_	22	// Block dia chi Serial thiet bi 12 byte, 1 byte chieu dai, 1 byte max, 10 byte noi dung
-#define _SSID_	44	// Block dia chi Serial thiet bi 34 byte, 1 byte chieu dai, 1 byte max, 32 byte noi dung
-#define _PASSWORD_	78	// Block dia chi Serial thiet bi 34 byte, 1 byte chieu dai, 1 byte max, 32 byte noi dung
-#define _IP_	112	// Block dia chi luu static IP 4 byte noi dung
-#define _GATEWAY_	116	// Block dia chi luu static gateway 4 byte noi dung
-#define _MASK_	120		// Block dia chi luu static gateway 4 byte noi dung
-#define _ADMIN_	124		// Block dia chi luu password admin service 12 byte, 1 byte chieu dai, 1 byte max, 10 byte noi dung
-#define _SERVER_	136		// Block dia chi luu password admin service 46 byte, 1 byte chieu dai, 1 byte max, 44 byte noi dung
+#define _SERIAL_ 20	// Serial of device 12         Bytes 20 to 31
+#define _SERIAL_MAX_ 10
+#define _KEY_	32	// Key to control 12           Bytes 32 to 43
+#define _KEY_MAX_ 10
+#define _SSID_	44	// SSID Wifi 34 byte           Bytes 44 to 77
+#define _SSID_MAX_ 32
+#define _PASSWORD_	78	// PASSWORD Wifi 34 byte   Bytes 78 to 111
+#define _PASSWORD_MAX_ 32
+#define _IP_	112	//     Static IP 4 byte        Bytes 112 to 115
+#define _GATEWAY_	116	// Gateway IP 4 byte       Bytes 116 to 119
+#define _MASK_	120		// Mask IP 4 byte          Bytes 120 to 123
+#define _ADMIN_	124		// Admin password 12 byte  Bytes 124 to 135
+#define _ADMIN_MAX_ 10
+#define _SERVER_	136	// Server address 50 byte  Bytes 136 to 185
+#define _SERVER_MAX_ 20
 
 // Json encode
 #define	ONEJSON	1
@@ -130,34 +125,85 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
 		
 		void SerialEvent(void);
 	private:
+        String _null="";
+        IPAddress _nil=(0,0,0,0);
 		boolean DEBUG;
         boolean IPSTATIC;
         boolean FIRSTSTART;
-		unsigned char ledpin;
-		boolean	apmode=false;
+		unsigned char LEDSTATUS;
+		String	SERIAL;
+		String	SSID;
+		String	PASSWORD;
+		String	KEY;
+		String	ADMIN;
+		String	SERVER;
+		IPAddress	IP;	// static IP cua thiet bi
+		IPAddress	GATEWAY;	// static IP cua thiet bi
+		IPAddress	MASK;	// static IP cua thiet bi
+        boolean CONNECTED=false;
+        boolean	APMODE=false;
+        unsigned char	WIFI_CONNECT_TIMEOUT=60;
+        const char *APPASSWORD = "hbinvent";
+        boolean SERIAL_COMPLETE = false;
+        boolean LOGINED = false;
+        String	SERIAL_RECEIVER = "";
+        String  DEFAULT_KEY = "1234567890";
+
+        const char lb_CONNECTING[] PROGMEM = "Connecting to:";
+        const char lb_CONNECTED[] PROGMEM = "Connected ";
+        const char lb_FAILED_CONNECT[] PROGMEM = "Failed connect ";
+        const char lb_APMODE_START[] PROGMEM = "APmode start";
+        const char lb_APMODE_STARTED[] PROGMEM = "APmode started";
+        const char lb_SSID[] PROGMEM = "SSID: ";
+        const char lb_PASSWORD[] PROGMEM = "PASSWORD: ";
+        const char lb_MAC_ADDRESS[] PROGMEM = "MAC ADDRESS: ";
+        const char lb_IP[] PROGMEM = "IP ADDRESS: ";
+        const char lb_STA[] PROGMEM = "STA ";
+        const char lb_AP[] PROGMEM = "AP ";
+        const char lb_DOT[] PROGMEM = ".";
+        const char lb_LOGIN_FAILED[] PROGMEM = "Enter password for login.";
+        const char lb_LOGIN_SUCCESS[] PROGMEM = "You had login lo system.";
+        const char lb_SERIAL[] PROGMEM = "Serial: ";
+        const char lb_KEY[] PROGMEM = "KEY";
+        const char lb_CONNECT_STATUS[] PROGMEM = "Connect status: ";
+        const char lb_DEBUG_ENABLE[] PROGMEM = "Enable debug mode";
+        const char lb_DEBUG_DISABLE[] PROGMEM = "Disable debug mode";
+        const char lb_REBOOT[] PROGMEM = "Reboot";
+        const char lb_RESTORE[] PROGMEM = "Restore";
+        const char lb_CHANGE_SUCCESS[] PROGMEM = "Success change ";
+        const char lb_CHANGE_FAILED[] PROGMEM = "Failed change ";
+        const char lb_TO[] PROGMEM = "to ";
+        const char lb_ADMIN_PASSWORD[] PROGMEM = "Admin password ";
+        const char lb_SERVER[] PROGMEM = "Server ";
+        const char lb_STATIC[] PROGMEM = "Static ";
+        const char lb_MASK[] PROGMEM = "NetMask ";
+        const char lb_GATEWAY[] PROGMEM = "Gateway ";
+        const char lb_DHCP_ENABLE[] PROGMEM = "Enable DHCP";
+        const char lb_DHCP_DISABLE[] PROGMEM = "Disable DHCP";
+        const char lb_COMMAND_ERROR[] PROGMEM = "Command ERROR.";
+        
+        const char HTTP_header[] PROGMEM = "\r\nConnection: close\r\nCache-Control: max-age=0\r\nAccept: text/html,text/plain\r\nUser-Agent: Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) coc_coc_browser/50.2.175 Chrome/44.2.2403.175 Safari/537.36\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: en-US,en\r\n\r\n";
+        const char lb_RESTORE_START[] PROGMEM = "Starting Restore...";
+        const char lb_EMPTY_IP_STATIC[] PROGMEM = "Empty static IP, disable DHCP.";
+        const char lb_EMPTY_SSID[] PROGMEM = "Clear Wifi SSID.";
+        const char lb_EMPTY_PASSWORD[] PROGMEM = "Clear Wifi PASSWORD.";
+        
+        
+        const char lb_DOT[] PROGMEM = ".";
+        const char lb_DOT[] PROGMEM = ".";
+        
+		
 		boolean reconnect=false;
-		unsigned char	wifi_connect_timeout=60;
-		String	serial;
-		String	ssid;
-		String	password;
-		String	key;
-		String	admin;
-		String	server;
-		IPAddress	ip;	// static IP cua thiet bi
-		IPAddress	gateway;	// static IP cua thiet bi
-		IPAddress	mask;	// static IP cua thiet bi
-		String	SerialString = "";
-		boolean SerialComplete = false;
-		boolean AdminLogin = false;
-		boolean connected=false;
+		
+		
+		
 		
 		unsigned long last_time_request=0;
 		unsigned char timesout_request=3;	// times to try connect to host
 		unsigned long last_blink=0;
 		boolean LedState=LOW;
-		String	HTTP_header="\r\nConnection: close\r\nCache-Control: max-age=0\r\nAccept: text/html,text/plain\r\nUser-Agent: Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) coc_coc_browser/50.2.175 Chrome/44.2.2403.175 Safari/537.36\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: en-US,en\r\n\r\n";
 //		String	HTTP_header_ok="HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/json\r\nUser-Agent: Wifi-switch\r\nConnection: close\r\n\r\n";
 		String HTTP_notfound="";
-		const char *appassword = "hbinvent";
+		
 };
 #endif
