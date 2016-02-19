@@ -43,28 +43,15 @@ void getDecode(request *s, String http_rq);
 // EEPROM save boolean, byte need 1 byte
 // EEPROM save int need 2 byte
 // EEPROM save float, IPAddress need 4 byte
-#define _EEPROM_SIZE_ 512		// Lan khoi dong dau tien
-#define _DEBUG_ 0
-#define _FIRST_START_ 1		// Lan khoi dong dau tien
-#define _IP_STATIC_ 2		// Chon setup static IP cho thiet bi
+#define MAX_EEPROM_SIZE 512		// Lan khoi dong dau tien
 
-#define	_WIFI_CONN_TIMEOUT_	3	// timeout connect to wifi
-
-#define _SERIAL_ 20	// Serial of device 12         Bytes 20 to 31
-#define _SERIAL_MAX_ 10
-#define _KEY_	32	// Key to control 12           Bytes 32 to 43
-#define _KEY_MAX_ 10
-#define _SSID_	44	// SSID Wifi 34 byte           Bytes 44 to 77
-#define _SSID_MAX_ 32
-#define _PASSWORD_	78	// PASSWORD Wifi 34 byte   Bytes 78 to 111
-#define _PASSWORD_MAX_ 32
-#define _IP_	112	//     Static IP 4 byte        Bytes 112 to 115
-#define _GATEWAY_	116	// Gateway IP 4 byte       Bytes 116 to 119
-#define _MASK_	120		// Mask IP 4 byte          Bytes 120 to 123
-#define _ADMIN_	124		// Admin password 12 byte  Bytes 124 to 135
-#define _ADMIN_MAX_ 10
-#define _SERVER_	136	// Server address 50 byte  Bytes 136 to 185
-#define _SERVER_MAX_ 20
+#define MAX_SERIAL_LEN   10	// Serial of device 12         Bytes 20 to 31
+#define MAX_SSID_LEN     48
+#define MAX_PASSWORD_LEN 32	// Key to control 12           Bytes 32 to 43
+#define MAX_STATICIP_LEN 10
+#define MAX_KEY_LEN	     10	// SSID Wifi 34 byte           Bytes 44 to 77
+#define MAX_ADMIN_LEN    10
+#define MAX_SERVER_LEN	 48	// PASSWORD Wifi 34 byte   Bytes 78 to 111
 
 // Json encode
 #define	ONEJSON	1
@@ -76,6 +63,23 @@ void getDecode(request *s, String http_rq);
 #define	FIRSTGET	2
 #define	NEXTGET	3
 #define	LASTGET	4
+
+// set the EEPROM structure
+struct EEPROM_storage {
+  uint8_t DEBUG;
+  uint8_t FIRST_START;
+  uint8_t IS_STATICIP;
+  uint8_t WIFI_CONN_TIMEOUT;
+ 
+  char DEVICE_SERIAL[MAX_SERIAL_LEN + 1]; // WIFI ssid + null
+  char WF_SSID[MAX_SSID_LEN + 1]; // WIFI ssid + null
+  char WF_PASSWORD[MAX_PASSWORD_LEN + 1]; // WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
+  char DEVICE_STATICIP[MAX_STATICIP_LEN + 1]; // staticIP, if empty use DHCP + null
+  char DEVICE_KEY[MAX_KEY_LEN + 1]; // WIFI ssid + null
+  char DEVICE_ADMIN[MAX_ADMIN_LEN + 1]; // WIFI ssid + null
+  char MASTER_SERVER[MAX_SERVER_LEN + 1]; // WIFI ssid + null
+} STORAGE;
+
 
 class ESPHB	// class chua cac ham xu ly cua thu vien
 {
@@ -125,6 +129,8 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
 		
 		void SerialEvent(void);
 	private:
+		
+		
         String _null="";
         IPAddress _nil=(0,0,0,0);
 		boolean DEBUG;

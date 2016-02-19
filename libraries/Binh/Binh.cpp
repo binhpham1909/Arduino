@@ -85,6 +85,25 @@ void ESPHB::EEPROMStart(void){
 void ESPHB::EEPROMStop(void){
 	EEPROM.end();
 };
+template <class T> void ESPHB::EEPROMRead(int StartAddress,T *storageVar){
+	uint8_t * bytesToReadEEPROM = (uint8_t *)storageVar;
+	const int STORAGE_SIZE = sizeof(*storageVar);
+	for (int i = 0; i < STORAGE_SIZE; i++) {
+		bytesToReadEEPROM[i] = EEPROM.read(StartAddress + i);
+	}
+};
+
+//Stage
+template <class T> void ESPHB::EEPROMWrite(int StartAddress,T *storageVar){
+	uint8_t * bytesToWriteEEPROM = (uint8_t *)storageVar;
+	const int STORAGE_SIZE = sizeof(*storageVar);
+	for (int i = 0; i < STORAGE_SIZE; i++) {
+		EEPROM.write(StartAddress + i,bytesToWriteEEPROM[i]);
+	}
+	EEPROM.commit();
+};
+//Stage
+
 // save boolean: ()
 void ESPHB::EEPROMSave(int address, boolean _value){
 	if(_value)
