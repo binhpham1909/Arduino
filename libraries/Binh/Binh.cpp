@@ -17,13 +17,13 @@ void ESPHB::Startup(void){
     }else{
         DEBUG = false;
     }
-    if(DV_INF.FIRSTSTART==0)  
+    if(DV_INF.FIRST_START==0)  
         Restore();  // Set defaults on first startup
  
 }
 // Save defaults setup to EEPROM (Restore)
 void ESPHB::Restore(void){
-    EEPROM.begin(_EEPROM_SIZE_);
+    EEPROM.begin(MAX_EEPROM_SIZE);
     for(uint16_t i=MAX_EEPROM_SIZE; i>0; i--){
         EEPROM.write(i-1,0);
     }
@@ -50,7 +50,7 @@ void ESPHB::Restore(void){
 ///  Group function Write to EEPROM  ///
 ////////////////////////////////////////
 template <class T> void ESPHB::EEPROMSave(int StartAddress,T *storageVar){
-    EEPROM.begin(_EEPROM_SIZE_);
+    EEPROM.begin(MAX_EEPROM_SIZE);
 	uint8_t * bytesToWriteEEPROM = (uint8_t *)storageVar;
 	const int STORAGE_SIZE = sizeof(*storageVar);
 	for (int i = 0; i < STORAGE_SIZE; i++) {
@@ -65,7 +65,7 @@ template <class T> void ESPHB::EEPROMSave(int StartAddress,T *storageVar){
 /// Group function Read to EEPROM  ///
 //////////////////////////////////////
 template <class T> void ESPHB::EEPROMRead(int StartAddress,T *storageVar){
-    EEPROM.begin(_EEPROM_SIZE_);
+    EEPROM.begin(MAX_EEPROM_SIZE);
 	uint8_t * bytesToReadEEPROM = (uint8_t *)storageVar;
 	const int STORAGE_SIZE = sizeof(*storageVar);
 	for (int i = 0; i < STORAGE_SIZE; i++) {
@@ -99,8 +99,8 @@ void ESPHB::SerialEvent(void) {
 				Serial.print(FPSTR(lb_SSID));   Serial.println(WF_INF.WF_SSID);
                 Serial.print(FPSTR(lb_PASSWORD));   Serial.println(WF_INF.WF_PASSWORD);
                 Serial.print(FPSTR(lb_CONNECT_STATUS)); if(CONNECTED)   Serial.println(FPSTR(lb_CONNECTED)); else   Serial.println(FPSTR(lb_FAILED_CONNECT));
-                Serial.print(FPSTR(lb_STA) + FPSTR(lb_MAC_ADDRESS));    Serial.println(WiFi.macAddress(mac));
-                Serial.print(FPSTR(lb_STA) + FPSTR(lb_IP));    Serial.println(WiFi.localIP());	
+                Serial.print(FPSTR(lb_STA));    Serial.print(FPSTR(lb_MAC_ADDRESS));    Serial.println(WiFi.macAddress());
+                Serial.print(FPSTR(lb_STA));    Serial.print(FPSTR(lb_IP));    Serial.println(WiFi.localIP());	
 			}
 			else if((command=="debug")&&LOGINED){
                 DV_INF.DEBUG=true;
@@ -126,67 +126,94 @@ void ESPHB::SerialEvent(void) {
 			else if((command=="serial")&&LOGINED){
 				if(StringToArray(&value, DV_INF.DV_SERIAL, MAX_SERIAL_LEN)){
                     EEPROMSave(0,&DV_INF);
-					Serial.print(FPSTR(lb_CHANGE_SUCCESS) + FPSTR(lb_SERIAL) + FPSTR(lb_TO));
+					Serial.print(FPSTR(lb_CHANGE_SUCCESS));
+                    Serial.print(FPSTR(lb_SERIAL));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);	
 				}else{
-                    Serial.print(FPSTR(lb_CHANGE_FAILED) + FPSTR(lb_SERIAL) + FPSTR(lb_TO));
+                    Serial.print(FPSTR(lb_CHANGE_FAILED));
+                    Serial.print(FPSTR(lb_SERIAL));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);
                 };
 			}
 			else if((command=="ssid")&&LOGINED){
 				if(StringToArray(&value, WF_INF.WF_SSID, MAX_SSID_LEN)){
                     EEPROMSave(50,&WF_INF);
-					Serial.print(FPSTR(lb_CHANGE_SUCCESS) + FPSTR(lb_SSID) + FPSTR(lb_TO));
+					Serial.print(FPSTR(lb_CHANGE_SUCCESS));
+                    Serial.print(FPSTR(lb_SSID));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);	
 				}else{
-                    Serial.print(FPSTR(lb_CHANGE_FAILED) + FPSTR(lb_SSID) + FPSTR(lb_TO));
+                    Serial.print(FPSTR(lb_CHANGE_FAILED));
+                    Serial.print(FPSTR(lb_SSID));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);
                 };
 			}
 			else if((command=="password")&&LOGINED){
 				if(StringToArray(&value, WF_INF.WF_PASSWORD, MAX_PASSWORD_LEN)){
                     EEPROMSave(50,&WF_INF);
-					Serial.print(FPSTR(lb_CHANGE_SUCCESS) + FPSTR(lb_PASSWORD) + FPSTR(lb_TO));
+					Serial.print(FPSTR(lb_CHANGE_SUCCESS));
+                    Serial.print(FPSTR(lb_PASSWORD));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);	
 				}else{
-                    Serial.print(FPSTR(lb_CHANGE_FAILED) + FPSTR(lb_PASSWORD) + FPSTR(lb_TO));
+                    Serial.print(FPSTR(lb_CHANGE_FAILED));
+                    Serial.print(FPSTR(lb_PASSWORD));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);
                 };
 			}
 			else if((command=="key")&&LOGINED){
 				if(StringToArray(&value, WF_INF.WF_KEY, MAX_KEY_LEN)){
                     EEPROMSave(50,&WF_INF);
-					Serial.print(FPSTR(lb_CHANGE_SUCCESS) + FPSTR(lb_KEY) + FPSTR(lb_TO));
+					Serial.print(FPSTR(lb_CHANGE_SUCCESS));
+                    Serial.print(FPSTR(lb_KEY));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);	
 				}else{
-                    Serial.print(FPSTR(lb_CHANGE_FAILED) + FPSTR(lb_KEY) + FPSTR(lb_TO));
+                    Serial.print(FPSTR(lb_CHANGE_FAILED));
+                    Serial.print(FPSTR(lb_KEY));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);
                 };
 			}
 			else if((command=="admin")&&LOGINED){
 				if(StringToArray(&value, DV_INF.DV_ADMIN, MAX_ADMIN_LEN)){
                     EEPROMSave(0,&DV_INF);
-					Serial.print(FPSTR(lb_CHANGE_SUCCESS) + FPSTR(lb_ADMIN_PASSWORD) + FPSTR(lb_TO));
+					Serial.print(FPSTR(lb_CHANGE_SUCCESS));
+                    Serial.print(FPSTR(lb_ADMIN_PASSWORD));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);	
 				}else{
-                    Serial.print(FPSTR(lb_CHANGE_FAILED) + FPSTR(lb_ADMIN_PASSWORD) + FPSTR(lb_TO));
+                    Serial.print(FPSTR(lb_CHANGE_FAILED));
+                    Serial.print(FPSTR(lb_ADMIN_PASSWORD));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);
                 };
 			}
 			else if((command=="server")&&LOGINED){
 				if(StringToArray(&value, WF_INF.MASTER_SERVER, MAX_SERVER_LEN)){
                     EEPROMSave(50,&WF_INF);
-					Serial.print(FPSTR(lb_CHANGE_SUCCESS) + FPSTR(lb_SERVER) + FPSTR(lb_TO));
+					Serial.print(FPSTR(lb_CHANGE_SUCCESS));
+                    Serial.print(FPSTR(lb_SERVER));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);	
 				}else{
-                    Serial.print(FPSTR(lb_CHANGE_FAILED) + FPSTR(lb_SERVER) + FPSTR(lb_TO));
+                    Serial.print(FPSTR(lb_CHANGE_FAILED));
+                    Serial.print(FPSTR(lb_SERVER));
+                    Serial.print(FPSTR(lb_TO));
 					Serial.println(value);
                 };
 			}
 			else if((command=="ip")&&LOGINED){
-				WF_INF.WF_STATICIP = StringToIPAdress(String IPvalue);
+				WF_INF.WF_STATICIP = StringToIPAdress(value);
                 EEPROMSave(50,&WF_INF);
-				Serial.print(FPSTR(lb_CHANGE_SUCCESS) + FPSTR(lb_STATIC) + FPSTR(lb_IP) + FPSTR(lb_TO));
+				Serial.print(FPSTR(lb_CHANGE_SUCCESS));
+                Serial.print(FPSTR(lb_STATIC));
+                Serial.print(FPSTR(lb_IP));
+                Serial.print(FPSTR(lb_TO));
 				Serial.println(value);	
 			}
 			else if((command=="DHCP")&&LOGINED){
@@ -218,14 +245,14 @@ void ESPHB::wifi_connect(void){
 		unsigned char timeout=0;	// khởi tạo biến timeout
 
 		if(DEBUG) Serial.println(FPSTR(lb_CONNECTING));
-		if(DEBUG) Serial.print(FPSTR(lb_SSID));Serial.println(WF_INF.WF_SSID);
-		if(DEBUG) Serial.print(FPSTR(lb_PASSWORD));Serial.println(WF_INF.WF_PASSWORD);	
+		if(DEBUG) {   Serial.print(FPSTR(lb_SSID));   Serial.println(WF_INF.WF_SSID);}
+		if(DEBUG) {   Serial.print(FPSTR(lb_PASSWORD));Serial.println(WF_INF.WF_PASSWORD);}	
 		WiFi.begin(WF_INF.WF_SSID, WF_INF.WF_PASSWORD);	// kết nối tới mạng wifi
 		while (WiFi.status() != WL_CONNECTED) {	// nếu chưa kết nối được
 			delay(500); if(DEBUG)    Serial.print(FPSTR(lb_DOT));	// xuất ký tự . mỗi 0.5s
 			timeout++;	// tăng timeout
 			APMODE=false;
-			if(timeout>WF_INF.WIFI_CONNECT_TIMEOUT){	// nếu timeout > thời gian cho phép timeout_STA
+			if(timeout>WF_INF.WF_CONN_TIMEOUT){	// nếu timeout > thời gian cho phép timeout_STA
 				APMODE=true;	// bật cờ apmode
 				CONNECTED=false;
                 if(DEBUG)   Serial.println(FPSTR(lb_FAILED_CONNECT));
@@ -237,8 +264,16 @@ void ESPHB::wifi_connect(void){
             CONNECTED=true;
 		}
 		if(DEBUG&&CONNECTED)  Serial.print(FPSTR(lb_CONNECTED));
-        if(DEBUG&&CONNECTED)  Serial.print(FPSTR(lb_STA) + FPSTR(lb_MAC_ADDRESS));    Serial.println(WiFi.macAddress(mac));
-        if(DEBUG&&CONNECTED)  Serial.print(FPSTR(lb_STA) + FPSTR(lb_IP));    Serial.println(WiFi.localIP());	
+        if(DEBUG&&CONNECTED){
+            Serial.print(FPSTR(lb_STA));
+            Serial.print(FPSTR(lb_MAC_ADDRESS));
+            Serial.println(WiFi.macAddress());
+        }  
+        if(DEBUG&&CONNECTED){
+            Serial.print(FPSTR(lb_STA));
+            Serial.print(FPSTR(lb_IP));
+            Serial.println(WiFi.localIP());
+        }  	
 };
 void ESPHB::wifi_reconnect(void){
 	if(!APMODE&&(WiFi.status() != WL_CONNECTED)){
@@ -249,8 +284,16 @@ void ESPHB::wifi_apmode(void){
 	if(APMODE){
 		WiFi.mode(WIFI_AP_STA);
 		WiFi.softAP(DV_INF.DV_SERIAL, WF_INF.AP_PASSWORD);
-        if(DEBUG&&CONNECTED)  Serial.print(FPSTR(lb_AP) + FPSTR(lb_MAC_ADDRESS));    Serial.println(WiFi.softAPmacAddress(mac));
-        if(DEBUG&&CONNECTED)  Serial.print(FPSTR(lb_AP) + FPSTR(lb_IP));    Serial.println(WiFi.softAPIP());
+        if(DEBUG&&CONNECTED){
+            Serial.print(FPSTR(lb_AP));
+            Serial.print(FPSTR(lb_MAC_ADDRESS));
+            Serial.println(WiFi.softAPmacAddress());
+        }
+        if(DEBUG&&CONNECTED){
+            Serial.print(FPSTR(lb_AP));
+            Serial.print(FPSTR(lb_IP));
+            Serial.println(WiFi.softAPIP());
+        }
 	}
 }
 //////////////////////////////////////////
@@ -278,7 +321,7 @@ uint32_t ESPHB::StringToIPAdress(String IPvalue){
     int _ends=IPvalue.length();	// tổng chiều dài String IP
     for(char k=0;k<4;k++){
         String ipk=IPvalue.substring(_start,_dot);	// octet 1: từ vị trí xuất phát đến dấu . đầu tiên
-        b8[k]=(uint8_t)ipk.toInt();	// convert String to Int
+        mybytes32.b8[k]=(uint8_t)ipk.toInt();	// convert String to Int
         _start=_dot+1;	// dấu . đầu thành điểm xuất phát
         if(k<3){	
 			_dot=IPvalue.indexOf('.',_start);}
@@ -311,8 +354,8 @@ void ESPHB::decodeToKeyValue(String *_request, String _separate, String _end,Str
 //////////////////////////////////////
 // Event when ESP8266 server receive request 
 boolean ESPHB::CheckArlert(String *request){
-    if((request->indexOf('ALERT_ON'))>0){
-        if(DEBUG){Serial.print(alert);};
+    if((request->indexOf(">ON"))>0){
+        if(DEBUG)   Serial.print(F("alert"));
         return true;       
     }else{
         return false;
@@ -324,7 +367,8 @@ void ESPHB::jsonEncode(int _position, String * _s, String _key, String _val){	//
         case ONEJSON:
         case FIRSTJSON:
 		//	*_s += HTTP_header_ok;
-			*_s += FPSTR(lb_HTTP_200)+FPSTR(lb_JSON_OPEN_BRAKE);
+			*_s += FPSTR(lb_HTTP_200);
+            *_s += FPSTR(lb_JSON_OPEN_BRAKE);
             jsonAdd(_s,_key,_val);
             *_s+= (_position==ONEJSON) ? FPSTR(lb_JSON_CLOSE_BRAKE) : FPSTR(lb_JSON_NEW_LINE);
             break;
@@ -349,17 +393,23 @@ boolean ESPHB::sendGETRequest(String *_link,String *respone){
 	WiFiClient client3;
 	unsigned char _times_out=0;
 	if (!client3.connect(WF_INF.MASTER_SERVER, WF_INF.MASTER_SERVER_PORT)) {
-		if(DEBUG){Serial.println(FPSTR(lb_FAILED_CONNECT) + FPSTR(lb_TRY_RECONNECT));};
+		if(DEBUG){
+            Serial.println(FPSTR(lb_FAILED_CONNECT));
+            Serial.println(FPSTR(lb_TRY_RECONNECT));
+        };
 		delay(500);
 		_times_out++;
 		if(_times_out>WF_INF.MAX_REQUEST_TIMEOUT){
-			if(DEBUG){Serial.println(FPSTR(lb_ERROR_CONNECT));};
+			if(DEBUG){
+                Serial.println(FPSTR(lb_ERROR_CONNECT));
+            };
 			return 0;
 		}	
 	};
 	client3.print(FPSTR(lb_HTTP_GET_PREFIX));	// prefix "GET "
 	if(DEBUG){
-        Serial.print("\n" + FPSTR(lb_HTTP_GET_PREFIX));
+        Serial.print("\n");
+        Serial.print(FPSTR(lb_HTTP_GET_PREFIX));
     };
 	client3.print(*_link);	// link ex: /hostlink/local/file.php?key1=value1&&key2=value2
     client3.print(FPSTR(lb_SERIAL_KEY_GET));
@@ -409,21 +459,33 @@ void ESPHB::GETValue(String *_request,String _key,String *_val){
 	decodeToKeyValue(_request,"=","&&"," ",&_key,_val);
 }
 // Handler Event when ESP8266 server receive request
-void ESPHB::HttpHandlerEvent(String *request,String *respone){
+void ESPHB::httpHandlerEvent(String *request,String *respone){
 	String cssid,cpassword,ckey,cserver;
 	GETValue(request,"key",&ckey);
 	GETValue(request,"ssid",&cssid);
 	GETValue(request,"password",&cpassword);
 	GETValue(request,"server",&cserver);
 	if((ckey==String(WF_INF.WF_KEY))&&(cssid.length()<=MAX_SSID_LEN)&&(cpassword.length()<=MAX_PASSWORD_LEN)&&(cserver.length()<=MAX_SERVER_LEN)){
-		StringToArray(&value, WF_INF.WF_SSID, MAX_SSID_LEN);
-        StringToArray(&value, WF_INF.WF_SSID, MAX_SSID_LEN);
-        StringToArray(&value, WF_INF.WF_SSID, MAX_SSID_LEN);
+		StringToArray(&cssid, WF_INF.WF_SSID, MAX_SSID_LEN);
+        StringToArray(&cpassword, WF_INF.WF_PASSWORD, MAX_PASSWORD_LEN);
+        StringToArray(&cserver, WF_INF.MASTER_SERVER, MAX_SERVER_LEN);
         EEPROMSave(50,&WF_INF);        
-		jsonEncode(ONEJSON,respone,"result",FPSTR(lb_CHANGE_SUCCESS)+FPSTR(lb_SSID)+FPSTR(lb_TO)+cssid+FPSTR(lb_NEWLINE)+FPSTR(lb_PASSWORD)+FPSTR(lb_TO)+cpassword+FPSTR(lb_NEWLINE)+FPSTR(lb_SERVER)+FPSTR(lb_TO)+cserver);
+		jsonEncode(ONEJSON,respone,"result",F("Success"));
 		if(DEBUG){
-            Serial.println(FPSTR(lb_CHANGE_SUCCESS)+FPSTR(lb_SSID)+FPSTR(lb_TO)+cssid+FPSTR(lb_NEWLINE)+FPSTR(lb_PASSWORD)+FPSTR(lb_TO)+cpassword+FPSTR(lb_NEWLINE)+FPSTR(lb_SERVER)+FPSTR(lb_TO)+cserver);};
-	}
+            Serial.println(FPSTR(lb_CHANGE_SUCCESS));
+            Serial.print(FPSTR(lb_SSID));
+            Serial.print(FPSTR(lb_TO));
+            Serial.println(cssid);
+            Serial.print(FPSTR(lb_PASSWORD));
+            Serial.print(FPSTR(lb_TO));
+            Serial.println(cpassword);
+            Serial.print(FPSTR(lb_SERVER));
+            Serial.print(FPSTR(lb_TO));
+            Serial.println(cserver);            
+        };
+	}else{
+        jsonEncode(ONEJSON,respone,"result",F("Error"));
+    }
 }
 //////////////////////////////////////
 ///   Group function for Hardware  ///
@@ -455,14 +517,14 @@ void ESPHB::LedBlink(unsigned long _interval){
 			LedState = HIGH;  // Note that this switches the LED *off*
 		else if(LedState == HIGH)
 			LedState = LOW;   // Note that this switches the LED *on*
-		digitalWrite(ledpin, LedState);         
+		digitalWrite(LEDSTATUS, LedState);         
     }
 }
 void ESPHB::LedOn(void){
-	digitalWrite(ledpin, HIGH);         
+	digitalWrite(LEDSTATUS, HIGH);         
 }
 void ESPHB::LedOff(void){
-	digitalWrite(ledpin, LOW);         
+	digitalWrite(LEDSTATUS, LOW);         
 }
 boolean ESPHB::Timer(unsigned long *_last_time, unsigned long _interval){
 	unsigned long time_now=millis();

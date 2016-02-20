@@ -37,7 +37,7 @@ void getDecode(request *s, String http_rq);
 #include <WiFiClient.h> 
 #include <ESP8266WebServer.h>
 #include <EEPROM.h>
-
+#include <PGMSPACE.h>
 // EEPROM
 // EEPROM save string need string size + 2 byte, fisrt byte store len of string, second byte store max len of string, after are bytes of string
 // EEPROM save boolean, byte need 1 byte
@@ -64,70 +64,6 @@ void getDecode(request *s, String http_rq);
 #define	FIRSTGET	2
 #define	NEXTGET	3
 #define	LASTGET	4
-
-// set the EEPROM structure
-// first 50 bytes from 0 - 49 for device infomation
-struct EEPROM_DEVICE {
-    uint8_t DEBUG;  //  0
-    uint8_t FIRST_START;    // 1
-    char DV_ADMIN[MAX_ADMIN_LEN + 1];   // 2  - 12 Admin password to setup by serial + null
-    char DV_SERIAL[MAX_SERIAL_LEN + 1]; // 13 - 23 IMEI/Serial of device + null
-} DV_INF;
-
-// after from 50 - 2 for wifi
-struct EEPROM_WIFI {
-    uint8_t IS_STATICIP;    // 50 use for enable/disable static ip
-    uint8_t WF_CONN_TIMEOUT;    // 51 use for time of wifi timeout connect by WF_CONN_TIMEOUT * 0.5s
-    char WF_SSID[MAX_SSID_LEN + 1]; // 52 - 84 ssid + null
-    char WF_PASSWORD[MAX_PASSWORD_LEN + 1]; // 85 - 117 WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
-    uint32_t WF_STATICIP; // 118 - 121 IP of staticIP, if empty use DHCP
-    char WF_KEY[MAX_KEY_LEN + 1]; // 122 - 132 key to control by network + null
-    char MASTER_SERVER[MAX_SERVER_LEN + 1]; // 133 - 181 server process sensor (ex Pi2) + null
-    uint8_t MASTER_SERVER_PORT; // 182  port for listen of server process sensor
-    char AP_SSID[MAX_SSID_LEN + 1]; // 183 - 215 AP ssid + null
-    char AP_PASSWORD[MAX_PASSWORD_LEN + 1]; // 216 - 248 AP WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
-    uint8_t MAX_REQUEST_TIMEOUT;    // 249 use for time of wifi timeout connect by MAX_REQUEST_TIMEOUT * 0.5s   
-} WF_INF;
-
-
-class ESPHB	// class chua cac ham xu ly cua thu vien
-{
-	public:
-		ESPHB(unsigned char _ledpin);
-		void Startup(void);
-        void Restore(void);
-        template <class T> void EEPROMSave(int StartAddress,T *storageVar);
-        template <class T> void EEPROMRead(int StartAddress,T *storageVar);
-        void SerialEvent(void);
-        boolean StringToArray(String *StringFrom, char* arrayTo, int maxlen);
-        uint32_t StringToIPAdress(String IPvalue);
-        boolean CheckArlert(String *request);
-        void jsonEncode(int _position, String * _s, String _key, String _val);
-        void jsonAdd(String *_s, String _key,String _val);
-        boolean sendGETRequest(String *_link,String *respone);
-        void AddGetRequest(String *_s, String _key,String _val);
-        void GETValue(String *_request,String _key,String *_val);
-        void decodeToKeyValue(String *_request, String _separate, String _end,String _enall, String *_key,String *_val);
-        void HttpHandlerEvent(String *request,String *respone);
-        boolean togglePin(String _pinname, String _value);
-        uint8_t getPin(String _pin);
-        boolean pinValue(String _value);
-        void LedBlink(unsigned long _interval);
-        void LedOn(void);
-        void LedOff(void);
-        boolean Timer(unsigned long *_last_time, unsigned long _interval);
-	private:
-        boolean DEBUG = true;
-		boolean LOGINED = false;
-        boolean CONNECTED=false;
-        boolean	APMODE=false;
-		boolean SERIAL_COMPLETE = false;
-
-		unsigned char LEDSTATUS;
-        String	SERIAL_RECEIVER = "";
-        String  DEFAULT_KEY = "1234567890";
-        String  DEFAULT_APPASSWORD = "hbinvent";
-        String  null = "";
 
         const char lb_CONNECTING[] PROGMEM = "Connecting to:";
         const char lb_CONNECTED[] PROGMEM = "Connected ";
@@ -185,7 +121,76 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
         const char lb_JSON_OPEN_BRAKE[] PROGMEM = "{\r\n";
         const char lb_JSON_CLOSE_BRAKE[] PROGMEM = "\r\n}";
         const char lb_JSON_NEW_LINE[] PROGMEM = ",\r\n";
-        
+
+// set the EEPROM structure
+// first 50 bytes from 0 - 49 for device infomation
+struct EEPROM_DEVICE {
+    uint8_t DEBUG;  //  0
+    uint8_t FIRST_START;    // 1
+    char DV_ADMIN[MAX_ADMIN_LEN + 1];   // 2  - 12 Admin password to setup by serial + null
+    char DV_SERIAL[MAX_SERIAL_LEN + 1]; // 13 - 23 IMEI/Serial of device + null
+} ;
+
+// after from 50 - 2 for wifi
+struct EEPROM_WIFI {
+    uint8_t IS_STATICIP;    // 50 use for enable/disable static ip
+    uint8_t WF_CONN_TIMEOUT;    // 51 use for time of wifi timeout connect by WF_CONN_TIMEOUT * 0.5s
+    char WF_SSID[MAX_SSID_LEN + 1]; // 52 - 84 ssid + null
+    char WF_PASSWORD[MAX_PASSWORD_LEN + 1]; // 85 - 117 WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
+    uint32_t WF_STATICIP; // 118 - 121 IP of staticIP, if empty use DHCP
+    char WF_KEY[MAX_KEY_LEN + 1]; // 122 - 132 key to control by network + null
+    char MASTER_SERVER[MAX_SERVER_LEN + 1]; // 133 - 181 server process sensor (ex Pi2) + null
+    uint8_t MASTER_SERVER_PORT; // 182  port for listen of server process sensor
+    char AP_SSID[MAX_SSID_LEN + 1]; // 183 - 215 AP ssid + null
+    char AP_PASSWORD[MAX_PASSWORD_LEN + 1]; // 216 - 248 AP WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
+    uint8_t MAX_REQUEST_TIMEOUT;    // 249 use for time of wifi timeout connect by MAX_REQUEST_TIMEOUT * 0.5s   
+} ;
+
+
+class ESPHB	// class chua cac ham xu ly cua thu vien
+{
+	public:
+		ESPHB(unsigned char _ledpin);
+		void Startup(void);
+        void Restore(void);
+        template <class T> void EEPROMSave(int StartAddress,T *storageVar);
+        template <class T> void EEPROMRead(int StartAddress,T *storageVar);
+        void wifi_connect(void);
+        void wifi_reconnect(void);
+        void wifi_apmode(void);
+        void SerialEvent(void);
+        boolean StringToArray(String *StringFrom, char* arrayTo, int maxlen);
+        uint32_t StringToIPAdress(String IPvalue);
+        boolean CheckArlert(String *request);
+        void jsonEncode(int _position, String * _s, String _key, String _val);
+        void jsonAdd(String *_s, String _key,String _val);
+        boolean sendGETRequest(String *_link,String *respone);
+        void AddGetRequest(String *_s, String _key,String _val);
+        void GETValue(String *_request,String _key,String *_val);
+        void decodeToKeyValue(String *_request, String _separate, String _end,String _enall, String *_key,String *_val);
+        void httpHandlerEvent(String *request,String *respone);
+        boolean togglePin(String _pinname, String _value);
+        uint8_t getPin(String _pin);
+        boolean pinValue(String _value);
+        void LedBlink(unsigned long _interval);
+        void LedOn(void);
+        void LedOff(void);
+        boolean Timer(unsigned long *_last_time, unsigned long _interval);
+	private:
+        EEPROM_DEVICE DV_INF;
+        EEPROM_WIFI WF_INF;
+        boolean DEBUG = true;
+		boolean LOGINED = false;
+        boolean CONNECTED=false;
+        boolean	APMODE=false;
+		boolean SERIAL_COMPLETE = false;
+
+		unsigned char LEDSTATUS;
+        String	SERIAL_RECEIVER = "";
+        String  DEFAULT_KEY = "1234567890";
+        String  DEFAULT_APPASSWORD = "hbinvent";
+        String  null = "";
+               
 		unsigned long last_blink=0;
 		boolean LedState=LOW;
 };
