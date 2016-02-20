@@ -45,12 +45,13 @@ void getDecode(request *s, String http_rq);
 // EEPROM save float, IPAddress need 4 byte
 #define MAX_EEPROM_SIZE 512		// Lan khoi dong dau tien
 
-#define MAX_SERIAL_LEN   10	// Serial of device 12         Bytes 20 to 31
-#define MAX_SSID_LEN     48
+#define MAX_ADMIN_LEN    10
+#define MAX_SERIAL_LEN   10	
+
+#define MAX_SSID_LEN     32
 #define MAX_PASSWORD_LEN 32	// Key to control 12           Bytes 32 to 43
 #define MAX_STATICIP_LEN 10
 #define MAX_KEY_LEN	     10	// SSID Wifi 34 byte           Bytes 44 to 77
-#define MAX_ADMIN_LEN    10
 #define MAX_SERVER_LEN	 48	// PASSWORD Wifi 34 byte   Bytes 78 to 111
 
 // Json encode
@@ -65,105 +66,80 @@ void getDecode(request *s, String http_rq);
 #define	LASTGET	4
 
 // set the EEPROM structure
-struct EEPROM_storage {
-  uint8_t DEBUG;
-  uint8_t FIRST_START;
-  uint8_t IS_STATICIP;
-  uint8_t WIFI_CONN_TIMEOUT;
- 
-  char DEVICE_SERIAL[MAX_SERIAL_LEN + 1]; // WIFI ssid + null
-  char WF_SSID[MAX_SSID_LEN + 1]; // WIFI ssid + null
-  char WF_PASSWORD[MAX_PASSWORD_LEN + 1]; // WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
-  char DEVICE_STATICIP[MAX_STATICIP_LEN + 1]; // staticIP, if empty use DHCP + null
-  char DEVICE_KEY[MAX_KEY_LEN + 1]; // WIFI ssid + null
-  char DEVICE_ADMIN[MAX_ADMIN_LEN + 1]; // WIFI ssid + null
-  char MASTER_SERVER[MAX_SERVER_LEN + 1]; // WIFI ssid + null
-} STORAGE;
+// first 50 bytes from 0 - 49 for device infomation
+struct EEPROM_DEVICE {
+    uint8_t DEBUG;  //  0
+    uint8_t FIRST_START;    // 1
+    char DV_ADMIN[MAX_ADMIN_LEN + 1];   // 2  - 12 Admin password to setup by serial + null
+    char DV_SERIAL[MAX_SERIAL_LEN + 1]; // 13 - 23 IMEI/Serial of device + null
+} DV_INF;
+
+// after from 50 - 2 for wifi
+struct EEPROM_WIFI {
+    uint8_t IS_STATICIP;    // 50 use for enable/disable static ip
+    uint8_t WF_CONN_TIMEOUT;    // 51 use for time of wifi timeout connect by WF_CONN_TIMEOUT * 0.5s
+    char WF_SSID[MAX_SSID_LEN + 1]; // 52 - 84 ssid + null
+    char WF_PASSWORD[MAX_PASSWORD_LEN + 1]; // 85 - 117 WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
+    uint32_t WF_STATICIP; // 118 - 121 IP of staticIP, if empty use DHCP
+    char WF_KEY[MAX_KEY_LEN + 1]; // 122 - 132 key to control by network + null
+    char MASTER_SERVER[MAX_SERVER_LEN + 1]; // 133 - 181 server process sensor (ex Pi2) + null
+    uint8_t MASTER_SERVER_PORT; // 182  port for listen of server process sensor
+    char AP_SSID[MAX_SSID_LEN + 1]; // 183 - 215 AP ssid + null
+    char AP_PASSWORD[MAX_PASSWORD_LEN + 1]; // 216 - 248 AP WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
+    uint8_t MAX_REQUEST_TIMEOUT;    // 249 use for time of wifi timeout connect by MAX_REQUEST_TIMEOUT * 0.5s   
+} WF_INF;
 
 
 class ESPHB	// class chua cac ham xu ly cua thu vien
 {
 	public:
 		ESPHB(unsigned char _ledpin);
-		void StoreStart(void);	// Set debug mode on or off
-		void set_debug(boolean _debug);	// Set debug mode on or off
-		boolean StoreString(int address,String value);	// Save String to EEPROM, return 1 if success, 0 if failure
-		void StoreStringIP(int address,String IPvalue);	// Save String IP eg: 192.168.1.10 to EEPROM
-		void StoreIP(int address,IPAddress ip_tosave);	// Save IPAddress IP eg: (192,168,1,10) to EEPROM
-		void StoreFloat(int address,float value);	// Save float to EEPROM
-		boolean StoreSerial(String tosave);
-		boolean StoreKey(String tosave);
-		boolean StoreSsid(String tosave);
-		boolean StorePassword(String tosave);
-		boolean StoreAdmin(String tosave);
-		boolean StoreServer(String tosave);
-		void Restore(void);
-		
-		boolean ReadSBoolean(int address);
-		float ReadSFloat(int address);	// Read float from EEPROM
-		void ReadSString(int address,String *value);	// Read String from EEPROM
-		void ReadSIP(int address,IPAddress *read);	//	Read IP from EEPROM to String	
-		void read_configs(void);
-		
-		void wifi_connect(void);	// Connect to wifi, return 1 if connected, 0 if fail
-		void wifi_reconnect(void);
-		void wifi_apmode(void);
-		
-		void HttpServerEvent(String *request,String *respone);
-		boolean CheckArlert(String *request);
-		boolean GETRequest(String *_link,String *respone);	// Send GET Request to server
-		void jsonEncode(int _position, String * _s, String _key, String _val);		
-		void jsonAdd(String *_s, String _key,String _val);
-		void GETValue(String *_request,String _key,String *_val);
-		void AnalysisValue(String *_request, String _separate, String _end,String _enall, String *_key,String *_val);
-		void AddGetRequest(String *_s, String _key,String _val);
-		
-		void IPtoString(IPAddress _ip,String * _s);
-		boolean toggle_pin(String _pinname, String _value);
-		unsigned char get_pin(String _pin);
-		boolean pin_value(String _value);
-		void LedBlink(unsigned long _interval);
-		void LedOn();
-		void LedOff();
-		boolean Timer(unsigned long *_last_time, unsigned long _interval);
-		
-		void SerialEvent(void);
+		void Startup(void);
+        void Restore(void);
+        template <class T> void EEPROMSave(int StartAddress,T *storageVar);
+        template <class T> void EEPROMRead(int StartAddress,T *storageVar);
+        void SerialEvent(void);
+        boolean StringToArray(String *StringFrom, char* arrayTo, int maxlen);
+        uint32_t StringToIPAdress(String IPvalue);
+        boolean CheckArlert(String *request);
+        void jsonEncode(int _position, String * _s, String _key, String _val);
+        void jsonAdd(String *_s, String _key,String _val);
+        boolean sendGETRequest(String *_link,String *respone);
+        void AddGetRequest(String *_s, String _key,String _val);
+        void GETValue(String *_request,String _key,String *_val);
+        void decodeToKeyValue(String *_request, String _separate, String _end,String _enall, String *_key,String *_val);
+        void HttpHandlerEvent(String *request,String *respone);
+        boolean togglePin(String _pinname, String _value);
+        uint8_t getPin(String _pin);
+        boolean pinValue(String _value);
+        void LedBlink(unsigned long _interval);
+        void LedOn(void);
+        void LedOff(void);
+        boolean Timer(unsigned long *_last_time, unsigned long _interval);
 	private:
-		
-		
-        String _null="";
-        IPAddress _nil=(0,0,0,0);
-		boolean DEBUG;
-        boolean IPSTATIC;
-        boolean FIRSTSTART;
-		unsigned char LEDSTATUS;
-		String	SERIAL;
-		String	SSID;
-		String	PASSWORD;
-		String	KEY;
-		String	ADMIN;
-		String	SERVER;
-		IPAddress	IP;	// static IP cua thiet bi
-		IPAddress	GATEWAY;	// static IP cua thiet bi
-		IPAddress	MASK;	// static IP cua thiet bi
+        boolean DEBUG = true;
+		boolean LOGINED = false;
         boolean CONNECTED=false;
         boolean	APMODE=false;
-        unsigned char	WIFI_CONNECT_TIMEOUT=60;
-        const char *APPASSWORD = "hbinvent";
-        boolean SERIAL_COMPLETE = false;
-        boolean LOGINED = false;
+		boolean SERIAL_COMPLETE = false;
+
+		unsigned char LEDSTATUS;
         String	SERIAL_RECEIVER = "";
         String  DEFAULT_KEY = "1234567890";
+        String  DEFAULT_APPASSWORD = "hbinvent";
+        String  null = "";
 
         const char lb_CONNECTING[] PROGMEM = "Connecting to:";
         const char lb_CONNECTED[] PROGMEM = "Connected ";
         const char lb_FAILED_CONNECT[] PROGMEM = "Failed connect ";
+        const char lb_TRY_RECONNECT[] PROGMEM = "Try reconnect ";
+        const char lb_ERROR_CONNECT[] PROGMEM = "Connect ERROR!";
         const char lb_APMODE_START[] PROGMEM = "APmode start";
         const char lb_APMODE_STARTED[] PROGMEM = "APmode started";
-        const char lb_SSID[] PROGMEM = "SSID: ";
-        const char lb_PASSWORD[] PROGMEM = "PASSWORD: ";
-        const char lb_MAC_ADDRESS[] PROGMEM = "MAC ADDRESS: ";
-        const char lb_IP[] PROGMEM = "IP ADDRESS: ";
+        const char lb_SSID[] PROGMEM = "SSID ";
+        const char lb_PASSWORD[] PROGMEM = "PASSWORD ";
+        const char lb_MAC_ADDRESS[] PROGMEM = "MAC ADDRESS ";
+        const char lb_IP[] PROGMEM = "IP ADDRESS ";
         const char lb_STA[] PROGMEM = "STA ";
         const char lb_AP[] PROGMEM = "AP ";
         const char lb_DOT[] PROGMEM = ".";
@@ -188,28 +164,29 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
         const char lb_DHCP_DISABLE[] PROGMEM = "Disable DHCP";
         const char lb_COMMAND_ERROR[] PROGMEM = "Command ERROR.";
         
-        const char HTTP_header[] PROGMEM = "\r\nConnection: close\r\nCache-Control: max-age=0\r\nAccept: text/html,text/plain\r\nUser-Agent: Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) coc_coc_browser/50.2.175 Chrome/44.2.2403.175 Safari/537.36\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: en-US,en\r\n\r\n";
+        const char lb_NEWLINE[] PROGMEM = "\r\n";
+        const char lb_HTTP_200[] PROGMEM= "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/json\r\nUser-Agent: Wifi-switch\r\nConnection: close\r\n\r\n";
+        const char lb_HTTP_GET_PREFIX[] PROGMEM = "GET ";
+        const char lb_SERIAL_KEY_GET[] PROGMEM = "&&serial=";
+        const char lb_HTTP_HEADER_VERSION[] PROGMEM = " HTTP/1.1\r\n";
+        const char lb_HTTP_HEADER_HOST[] PROGMEM = "Host: ";
+        const char lb_HTTP_HEADER_CONNECTION[] PROGMEM = "Connection: close\r\n";
+        const char lb_HTTP_HEADER_CACHE[] PROGMEM = "Cache-Control: max-age=0\r\n";
+        const char lb_HTTP_HEADER_ACCEPT[] PROGMEM = "Accept: text/html,text/plain\r\n";
+        const char lb_HTTP_HEADER_USER_AGENT[] PROGMEM = "User-Agent: Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) coc_coc_browser/50.2.175 Chrome/44.2.2403.175 Safari/537.36\r\n";
+        const char lb_HTTP_HEADER_ENCODING[] PROGMEM = "Accept-Encoding: gzip, deflate, sdch\r\n";
+        const char lb_HTTP_HEADER_LANGUE[] PROGMEM = "Accept-Language: en-US,en\r\n";
+        
         const char lb_RESTORE_START[] PROGMEM = "Starting Restore...";
         const char lb_EMPTY_IP_STATIC[] PROGMEM = "Empty static IP, disable DHCP.";
         const char lb_EMPTY_SSID[] PROGMEM = "Clear Wifi SSID.";
         const char lb_EMPTY_PASSWORD[] PROGMEM = "Clear Wifi PASSWORD.";
         
+        const char lb_JSON_OPEN_BRAKE[] PROGMEM = "{\r\n";
+        const char lb_JSON_CLOSE_BRAKE[] PROGMEM = "\r\n}";
+        const char lb_JSON_NEW_LINE[] PROGMEM = ",\r\n";
         
-        const char lb_DOT[] PROGMEM = ".";
-        const char lb_DOT[] PROGMEM = ".";
-        
-		
-		boolean reconnect=false;
-		
-		
-		
-		
-		unsigned long last_time_request=0;
-		unsigned char timesout_request=3;	// times to try connect to host
 		unsigned long last_blink=0;
 		boolean LedState=LOW;
-//		String	HTTP_header_ok="HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/json\r\nUser-Agent: Wifi-switch\r\nConnection: close\r\n\r\n";
-		String HTTP_notfound="";
-		
 };
 #endif

@@ -31,7 +31,7 @@ struct EEPROM_storage {
   char ADMIN[MAX_ADMIN_LEN + 1]; // WIFI ssid + null
   char SERVER[MAX_SERVER_LEN + 1]; // WIFI ssid + null
 } STORAGE;
-
+String stringto="motconvit";
 template <class T> void EEPROMRead(int StartAddress,T *storageVar){
   uint8_t * bytesToReadEEPROM = (uint8_t *)storageVar;
   const int STORAGE_SIZE = sizeof(*storageVar);
@@ -45,6 +45,12 @@ template <class T> void EEPROMWrite(int StartAddress,T *storageVar){
   for (int i = 0; i < STORAGE_SIZE; i++) {
     EEPROM.write(StartAddress + i,bytesToWriteEEPROM[i]);
   }
+};
+void StringToArray(char* arrayTo, String *StringFrom,int maxlen){
+    int _len=StringFrom->length();
+    if(maxlen>_len){
+        StringFrom->toCharArray(arrayTo,_len+1);
+    }
 };
 void setup() {
   // initialize serial and wait for port to open:
@@ -61,11 +67,13 @@ void setup() {
   STORAGE.DEVICE_SERIAL[4]=a[4];
   STORAGE.DEVICE_SERIAL[5]=a[5];
   EEPROMWrite(0,&STORAGE);*/
-  EEPROMRead(0,&STORAGE);
+  
 }
 
 void loop() {
+  EEPROMRead(0,&STORAGE);
   Serial.println(STORAGE.DEVICE_SERIAL);
-  Serial.println(STORAGE.FIRST_START);
+  StringToArray(STORAGE.DEVICE_SERIAL, &stringto,MAX_SERIAL_LEN);
+  Serial.println(STORAGE.DEVICE_SERIAL);
   while(true){};
 }
