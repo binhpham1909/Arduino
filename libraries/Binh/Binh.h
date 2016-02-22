@@ -82,7 +82,7 @@ void getDecode(request *s, String http_rq);
         const char lb_LOGIN_FAILED[] PROGMEM = "Enter password for login.";
         const char lb_LOGIN_SUCCESS[] PROGMEM = "You had login lo system.";
         const char lb_SERIAL[] PROGMEM = "Serial: ";
-        const char lb_KEY[] PROGMEM = "KEY";
+        const char lb_KEY[] PROGMEM = "KEY ";
         const char lb_CONNECT_STATUS[] PROGMEM = "Connect status: ";
         const char lb_DEBUG_ENABLE[] PROGMEM = "Enable debug mode";
         const char lb_DEBUG_DISABLE[] PROGMEM = "Disable debug mode";
@@ -93,6 +93,7 @@ void getDecode(request *s, String http_rq);
         const char lb_TO[] PROGMEM = "to ";
         const char lb_ADMIN_PASSWORD[] PROGMEM = "Admin password ";
         const char lb_SERVER[] PROGMEM = "Server ";
+        const char lb_SERVER_PORT[] PROGMEM = "Server PORT ";
         const char lb_STATIC[] PROGMEM = "Static ";
         const char lb_MASK[] PROGMEM = "NetMask ";
         const char lb_GATEWAY[] PROGMEM = "Gateway ";
@@ -106,12 +107,7 @@ void getDecode(request *s, String http_rq);
         const char lb_SERIAL_KEY_GET[] PROGMEM = "&&serial=";
         const char lb_HTTP_HEADER_VERSION[] PROGMEM = " HTTP/1.1\r\n";
         const char lb_HTTP_HEADER_HOST[] PROGMEM = "Host: ";
-        const char lb_HTTP_HEADER_CONNECTION[] PROGMEM = "Connection: close\r\n";
-        const char lb_HTTP_HEADER_CACHE[] PROGMEM = "Cache-Control: max-age=0\r\n";
-        const char lb_HTTP_HEADER_ACCEPT[] PROGMEM = "Accept: text/html,text/plain\r\n";
-        const char lb_HTTP_HEADER_USER_AGENT[] PROGMEM = "User-Agent: Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) coc_coc_browser/50.2.175 Chrome/44.2.2403.175 Safari/537.36\r\n";
-        const char lb_HTTP_HEADER_ENCODING[] PROGMEM = "Accept-Encoding: gzip, deflate, sdch\r\n";
-        const char lb_HTTP_HEADER_LANGUE[] PROGMEM = "Accept-Language: en-US,en\r\n";
+        const char lb_HTTP_HEADER_CONNECTION[] PROGMEM = "Connection: close\r\nCache-Control: max-age=0\r\nAccept: text/html,text/plain\r\nUser-Agent: Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) coc_coc_browser/50.2.175 Chrome/44.2.2403.175 Safari/537.36\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: en-US,en\r\n\r\n";
         
         const char lb_RESTORE_START[] PROGMEM = "Starting Restore...";
         const char lb_EMPTY_IP_STATIC[] PROGMEM = "Empty static IP, disable DHCP.";
@@ -140,10 +136,10 @@ struct EEPROM_WIFI {
     uint32_t WF_STATICIP; // 118 - 121 IP of staticIP, if empty use DHCP
     char WF_KEY[MAX_KEY_LEN + 1]; // 122 - 132 key to control by network + null
     char MASTER_SERVER[MAX_SERVER_LEN + 1]; // 133 - 181 server process sensor (ex Pi2) + null
-    uint8_t MASTER_SERVER_PORT; // 182  port for listen of server process sensor
-    char AP_SSID[MAX_SSID_LEN + 1]; // 183 - 215 AP ssid + null
-    char AP_PASSWORD[MAX_PASSWORD_LEN + 1]; // 216 - 248 AP WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
-    uint8_t MAX_REQUEST_TIMEOUT;    // 249 use for time of wifi timeout connect by MAX_REQUEST_TIMEOUT * 0.5s   
+    uint16_t MASTER_SERVER_PORT; // 182-183  port for listen of server process sensor
+    char AP_SSID[MAX_SSID_LEN + 1]; // 184 - 216 AP ssid + null
+    char AP_PASSWORD[MAX_PASSWORD_LEN + 1]; // 217 - 249 AP WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
+    uint8_t MAX_REQUEST_TIMEOUT;    // 250 use for time of wifi timeout connect by MAX_REQUEST_TIMEOUT * 0.5s   
 } ;
 
 

@@ -42,7 +42,7 @@ void loop() {
     esp.SerialEvent();
     esp.wifi_reconnect();
     // Read dht every 5s
-    if(esp.Timer(&last_read_dht,5000)){  read_dht(); }
+    if(esp.Timer(&last_read_dht,10000)){  read_dht(); }
     // send temp, humility to server
     if(esp.Timer(&last_send_temp,10000)){
       esp.sendGETRequest(&process_link,&respone);

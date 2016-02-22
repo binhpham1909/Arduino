@@ -17,7 +17,8 @@ void ESPHB::Startup(void){
     }else{
         DEBUG = false;
     }
-    if(DV_INF.FIRST_START==0)  
+    DEBUG = true;
+    if(DV_INF.FIRST_START!=1)  
         Restore();  // Set defaults on first startup
  
 }
@@ -98,6 +99,8 @@ void ESPHB::SerialEvent(void) {
 				Serial.print(FPSTR(lb_SERIAL)); Serial.println(DV_INF.DV_SERIAL);
 				Serial.print(FPSTR(lb_SSID));   Serial.println(WF_INF.WF_SSID);
                 Serial.print(FPSTR(lb_PASSWORD));   Serial.println(WF_INF.WF_PASSWORD);
+                Serial.print(FPSTR(lb_SERVER));   Serial.println(WF_INF.MASTER_SERVER);
+                Serial.print(FPSTR(lb_SERVER));   Serial.println(WF_INF.MASTER_SERVER_PORT);
                 Serial.print(FPSTR(lb_CONNECT_STATUS)); if(CONNECTED)   Serial.println(FPSTR(lb_CONNECTED)); else   Serial.println(FPSTR(lb_FAILED_CONNECT));
                 Serial.print(FPSTR(lb_STA));    Serial.print(FPSTR(lb_MAC_ADDRESS));    Serial.println(WiFi.macAddress());
                 Serial.print(FPSTR(lb_STA));    Serial.print(FPSTR(lb_IP));    Serial.println(WiFi.localIP());	
@@ -207,6 +210,14 @@ void ESPHB::SerialEvent(void) {
 					Serial.println(value);
                 };
 			}
+			else if((command=="port")&&LOGINED){
+                WF_INF.MASTER_SERVER_PORT=value.toInt();
+                EEPROMSave(50,&WF_INF);
+				Serial.print(FPSTR(lb_CHANGE_SUCCESS));
+                Serial.print(FPSTR(lb_SERVER_PORT));
+                Serial.print(FPSTR(lb_TO));
+			    Serial.println(value);
+			}
 			else if((command=="ip")&&LOGINED){
 				WF_INF.WF_STATICIP = StringToIPAdress(value);
                 EEPROMSave(50,&WF_INF);
@@ -240,6 +251,7 @@ void ESPHB::SerialEvent(void) {
 
 // Connect to wifi
 void ESPHB::wifi_connect(void){
+    if(String(WF_INF.WF_SSID)!=""){
 		WiFi.mode(WIFI_STA);
 		CONNECTED=false;
 		unsigned char timeout=0;	// khởi tạo biến timeout
@@ -273,7 +285,15 @@ void ESPHB::wifi_connect(void){
             Serial.print(FPSTR(lb_STA));
             Serial.print(FPSTR(lb_IP));
             Serial.println(WiFi.localIP());
-        }  	
+        }         
+        
+    }else{
+        CONNECTED=false;
+        APMODE=true;
+        wifi_apmode();
+        if(DEBUG)   Serial.println(FPSTR(lb_APMODE_STARTED));       
+    }
+ 	
 };
 void ESPHB::wifi_reconnect(void){
 	if(!APMODE&&(WiFi.status() != WL_CONNECTED)){
@@ -391,7 +411,7 @@ void ESPHB::jsonAdd(String *_s, String _key,String _val) {
 boolean ESPHB::sendGETRequest(String *_link,String *respone){
 	*respone="";
 	WiFiClient client3;
-	unsigned char _times_out=0;
+	unsigned char _times_out=0, _timeout_get=0;
 	if (!client3.connect(WF_INF.MASTER_SERVER, WF_INF.MASTER_SERVER_PORT)) {
 		if(DEBUG){
             Serial.println(FPSTR(lb_FAILED_CONNECT));
@@ -406,40 +426,22 @@ boolean ESPHB::sendGETRequest(String *_link,String *respone){
 			return 0;
 		}	
 	};
-	client3.print(FPSTR(lb_HTTP_GET_PREFIX));	// prefix "GET "
+    String tosend="";
+    tosend+= FPSTR(lb_HTTP_GET_PREFIX);
+    tosend+= *_link;
+    tosend+= FPSTR(lb_SERIAL_KEY_GET);
+    tosend+= String(DV_INF.DV_SERIAL);
+    tosend+= FPSTR(lb_HTTP_HEADER_VERSION);
+    tosend+= FPSTR(lb_HTTP_HEADER_HOST);
+    tosend+= String(WF_INF.MASTER_SERVER);
+    tosend+= FPSTR(lb_NEWLINE);
+    tosend+= FPSTR(lb_HTTP_HEADER_CONNECTION);
+    client3.print(tosend);	// prefix "GET "
 	if(DEBUG){
         Serial.print("\n");
-        Serial.print(FPSTR(lb_HTTP_GET_PREFIX));
+        Serial.print(tosend);
     };
-	client3.print(*_link);	// link ex: /hostlink/local/file.php?key1=value1&&key2=value2
-    client3.print(FPSTR(lb_SERIAL_KEY_GET));
-    client3.print(DV_INF.DV_SERIAL);
-	if(DEBUG){
-        Serial.print(*_link);
-        Serial.print(FPSTR(lb_SERIAL_KEY_GET));
-        Serial.print(DV_INF.DV_SERIAL);
-    };
-	client3.print(FPSTR(lb_HTTP_HEADER_VERSION));
-    client3.print(FPSTR(lb_HTTP_HEADER_HOST));  client3.print(WF_INF.MASTER_SERVER);    client3.print(FPSTR(lb_NEWLINE));
-    client3.print(FPSTR(lb_HTTP_HEADER_CONNECTION));
-    client3.print(FPSTR(lb_HTTP_HEADER_CACHE));
-    client3.print(FPSTR(lb_HTTP_HEADER_ACCEPT));
-    client3.print(FPSTR(lb_HTTP_HEADER_USER_AGENT));
-    client3.print(FPSTR(lb_HTTP_HEADER_ENCODING));
-    client3.print(FPSTR(lb_HTTP_HEADER_LANGUE));
-    client3.print(FPSTR(lb_NEWLINE));
-	if(DEBUG){
-        Serial.print(FPSTR(lb_HTTP_HEADER_VERSION));
-        Serial.print(FPSTR(lb_HTTP_HEADER_HOST));  Serial.print(WF_INF.MASTER_SERVER);    Serial.print(FPSTR(lb_NEWLINE));
-        Serial.print(FPSTR(lb_HTTP_HEADER_CONNECTION));
-        Serial.print(FPSTR(lb_HTTP_HEADER_CACHE));
-        Serial.print(FPSTR(lb_HTTP_HEADER_ACCEPT));
-        Serial.print(FPSTR(lb_HTTP_HEADER_USER_AGENT));
-        Serial.print(FPSTR(lb_HTTP_HEADER_ENCODING));
-        Serial.print(FPSTR(lb_HTTP_HEADER_LANGUE));
-        Serial.print(FPSTR(lb_NEWLINE));
-    };
-	while (!client3.available()){};
+    delay(200);
 	while (client3.available()) { 
 		*respone = client3.readString();
     }
