@@ -38,6 +38,7 @@ void getDecode(request *s, String http_rq);
 #include <ESP8266WebServer.h>
 #include <EEPROM.h>
 #include <PGMSPACE.h>
+#include "DHT.h"
 // EEPROM
 // EEPROM save string need string size + 2 byte, fisrt byte store len of string, second byte store max len of string, after are bytes of string
 // EEPROM save boolean, byte need 1 byte
@@ -70,6 +71,7 @@ void getDecode(request *s, String http_rq);
         const char lb_FAILED_CONNECT[] PROGMEM = "Failed connect ";
         const char lb_TRY_RECONNECT[] PROGMEM = "Try reconnect ";
         const char lb_ERROR_CONNECT[] PROGMEM = "Connect ERROR!";
+        const char lb_TIMEOUT_CONNECT[] PROGMEM = "Connect timeout!";
         const char lb_APMODE_START[] PROGMEM = "APmode start";
         const char lb_APMODE_STARTED[] PROGMEM = "APmode started";
         const char lb_SSID[] PROGMEM = "SSID ";
@@ -117,7 +119,6 @@ void getDecode(request *s, String http_rq);
         const char lb_JSON_OPEN_BRAKE[] PROGMEM = "{\r\n";
         const char lb_JSON_CLOSE_BRAKE[] PROGMEM = "\r\n}";
         const char lb_JSON_NEW_LINE[] PROGMEM = ",\r\n";
-
 // set the EEPROM structure
 // first 50 bytes from 0 - 49 for device infomation
 struct EEPROM_DEVICE {
@@ -125,6 +126,12 @@ struct EEPROM_DEVICE {
     uint8_t FIRST_START;    // 1
     char DV_ADMIN[MAX_ADMIN_LEN + 1];   // 2  - 12 Admin password to setup by serial + null
     char DV_SERIAL[MAX_SERIAL_LEN + 1]; // 13 - 23 IMEI/Serial of device + null
+    uint8_t USE_DHT;    // 24
+    uint8_t DHT_PIN;    // 25
+    uint8_t DHT_TYPE;   // 26
+    uint8_t USE_DS18B20;// 27
+    uint8_t DS18B20_PIN; // 28
+    uint8_t DS18B20_TYPE; // 29
 } ;
 
 // after from 50 - 2 for wifi
@@ -147,6 +154,7 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
 {
 	public:
 		ESPHB(unsigned char _ledpin);
+        
 		void Startup(void);
         void Restore(void);
         template <class T> void EEPROMSave(int StartAddress,T *storageVar);
@@ -161,10 +169,11 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
         void jsonEncode(int _position, String * _s, String _key, String _val);
         void jsonAdd(String *_s, String _key,String _val);
         boolean sendGETRequest(String *_link,String *respone);
+        String sendRequest(void);
         void AddGetRequest(String *_s, String _key,String _val);
         void GETValue(String *_request,String _key,String *_val);
         void decodeToKeyValue(String *_request, String _separate, String _end,String _enall, String *_key,String *_val);
-        void httpHandlerEvent(String *request,String *respone);
+        String httpHandlerEvent(String *request);
         boolean togglePin(String _pinname, String _value);
         uint8_t getPin(String _pin);
         boolean pinValue(String _value);
@@ -175,6 +184,7 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
 	private:
         EEPROM_DEVICE DV_INF;
         EEPROM_WIFI WF_INF;
+        DHT dht;
         boolean DEBUG = true;
 		boolean LOGINED = false;
         boolean CONNECTED=false;

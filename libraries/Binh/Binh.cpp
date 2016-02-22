@@ -20,7 +20,9 @@ void ESPHB::Startup(void){
     DEBUG = true;
     if(DV_INF.FIRST_START!=1)  
         Restore();  // Set defaults on first startup
- 
+    if(DV_INF.USE_DHT==1){
+        dht.init(DV_INF.DHT_PIN, DV_INF.DHT_TYPE, 11,DV_INF.DEBUG);
+    }
 }
 // Save defaults setup to EEPROM (Restore)
 void ESPHB::Restore(void){
@@ -217,6 +219,30 @@ void ESPHB::SerialEvent(void) {
                 Serial.print(FPSTR(lb_SERVER_PORT));
                 Serial.print(FPSTR(lb_TO));
 			    Serial.println(value);
+			}else if((command=="setDHT")&&LOGINED){
+                // String setup: setDHT==ON/OFF-type-pin
+                // ex: setDHT==ON-22-14
+                uint8_t _dhttype,_dhtpin,_sepa,_nextsepa;
+                _sepa = value.indexOf("-");
+                _nextsepa = value.indexOf("-",_sepa);
+                String _dhtset=value.substring(0,sepa);
+                _dhttype = (value.substring( _sepa + 1, _nextsepa)).toInt();
+                _dhtpin = (value.substring( _nextsepa + 1, value.length())).toInt();
+                if(_dhtset=="ON"){
+                    DV_INF.USE_DHT = 1;
+                    DV_INF.DHT_TYPE = _dhttype;
+                    DV_INF.DHT_PIN = _dhtpin;
+                }else{
+                    DV_INF.USE_DHT = 0;
+                }
+                
+                
+                WF_INF.MASTER_SERVER_PORT=value.toInt();
+                EEPROMSave(50,&DV_INF);
+				Serial.print(FPSTR(lb_CHANGE_SUCCESS));
+                Serial.print(FPSTR(lb_SERVER_PORT));
+                Serial.print(FPSTR(lb_TO));
+			    Serial.println(value);
 			}
 			else if((command=="ip")&&LOGINED){
 				WF_INF.WF_STATICIP = StringToIPAdress(value);
@@ -387,7 +413,7 @@ void ESPHB::jsonEncode(int _position, String * _s, String _key, String _val){	//
         case ONEJSON:
         case FIRSTJSON:
 		//	*_s += HTTP_header_ok;
-			*_s += FPSTR(lb_HTTP_200);
+		//	*_s += FPSTR(lb_HTTP_200);
             *_s += FPSTR(lb_JSON_OPEN_BRAKE);
             jsonAdd(_s,_key,_val);
             *_s+= (_position==ONEJSON) ? FPSTR(lb_JSON_CLOSE_BRAKE) : FPSTR(lb_JSON_NEW_LINE);
@@ -408,6 +434,52 @@ void ESPHB::jsonAdd(String *_s, String _key,String _val) {
 }
 // Send GET Request and receive respone from server
 // Ex html GET: "GET /hostlink/local/file.php?key1=value1&&key2=value2 HTTP/1.1\r\nHost: 192.168.0.3\r\nConnection: close\r\nCache-Control: max-age=0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nUser-Agent: wifi-switch\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: vi-VN,vi;q=0.8,fr-FR;q=0.6,fr;q=0.4,en-US;q=0.2,en;q=0.2\r\n\r\n"
+String ESPHB::sendRequest(void){
+    String _jsonToSend="",respone="";
+	WiFiClient client3;
+	unsigned char _times_out=0, _timeout_get=0;
+	if (!client3.connect(WF_INF.MASTER_SERVER, WF_INF.MASTER_SERVER_PORT)) {
+		if(DEBUG){
+            Serial.println(FPSTR(lb_FAILED_CONNECT));
+            Serial.println(FPSTR(lb_TRY_RECONNECT));
+        };
+		delay(500);
+		_times_out++;
+		if(_times_out>WF_INF.MAX_REQUEST_TIMEOUT){
+			if(DEBUG){
+                Serial.println(FPSTR(lb_ERROR_CONNECT));
+            };
+			return FPSTR(lb_TIMEOUT_CONNECT);
+		}	
+	};
+    jsonEncode(FIRSTJSON,&_jsonToSend,"serial",String(DV_INF.DV_SERIAL));
+    jsonEncode(NEXTJSON,&_jsonToSend,"ssid",String(WF_INF.WF_SSID));
+    jsonEncode(NEXTJSON,&_jsonToSend,"password",String(WF_INF.WF_PASSWORD));
+    jsonEncode(NEXTJSON,&_jsonToSend,"keycontrol",String(WF_INF.WF_KEY));
+    if(DV_INF.USE_DHT==1){
+        jsonEncode(NEXTJSON,&_jsonToSend,"dht_humi", String(dht.readHumidity(),2));
+        jsonEncode(NEXTJSON,&_jsonToSend,"dht_temp", String(dht.readTemperature(),2));        
+    }
+
+    jsonEncode(NEXTJSON,&_jsonToSend,"localip",String(WiFi.localIP()));
+    jsonEncode(LASTJSON,&_jsonToSend,"MAC",String(WiFi.macAddress()));
+    
+    
+    client3.print(_jsonToSend);
+	if(DEBUG){
+        Serial.print("\n");
+        Serial.println(_jsonToSend);
+    };
+    delay(200);
+	while (client3.available()) { 
+		respone = client3.readString();
+    }
+	if(DEBUG){
+        Serial.println(respone);
+    };
+	client3.stop();                                                                                                                                
+	return respone;
+}
 boolean ESPHB::sendGETRequest(String *_link,String *respone){
 	*respone="";
 	WiFiClient client3;
@@ -461,8 +533,8 @@ void ESPHB::GETValue(String *_request,String _key,String *_val){
 	decodeToKeyValue(_request,"=","&&"," ",&_key,_val);
 }
 // Handler Event when ESP8266 server receive request
-void ESPHB::httpHandlerEvent(String *request,String *respone){
-	String cssid,cpassword,ckey,cserver;
+String ESPHB::httpHandlerEvent(String *request){
+	String cssid,cpassword,ckey,cserver,respone="";
 	GETValue(request,"key",&ckey);
 	GETValue(request,"ssid",&cssid);
 	GETValue(request,"password",&cpassword);
@@ -472,7 +544,7 @@ void ESPHB::httpHandlerEvent(String *request,String *respone){
         StringToArray(&cpassword, WF_INF.WF_PASSWORD, MAX_PASSWORD_LEN);
         StringToArray(&cserver, WF_INF.MASTER_SERVER, MAX_SERVER_LEN);
         EEPROMSave(50,&WF_INF);        
-		jsonEncode(ONEJSON,respone,"result",F("Success"));
+		jsonEncode(ONEJSON,&respone,"result",F("Success"));
 		if(DEBUG){
             Serial.println(FPSTR(lb_CHANGE_SUCCESS));
             Serial.print(FPSTR(lb_SSID));
@@ -486,8 +558,9 @@ void ESPHB::httpHandlerEvent(String *request,String *respone){
             Serial.println(cserver);            
         };
 	}else{
-        jsonEncode(ONEJSON,respone,"result",F("Error"));
+        jsonEncode(ONEJSON,&respone,"result",F("Error"));
     }
+    return respone;
 }
 //////////////////////////////////////
 ///   Group function for Hardware  ///

@@ -37,8 +37,7 @@ written by Adafruit Industries
 
 class DHT {
   public:
-   DHT(uint8_t pin, uint8_t type, uint8_t count=6);
-   void begin(void);
+   void init(uint8_t pin, uint8_t type, uint8_t count, boolean DEBUG);
    float readTemperature(bool S=false, bool force=false);
    float convertCtoF(float);
    float convertFtoC(float);
@@ -48,15 +47,14 @@ class DHT {
 
  private:
   uint8_t data[5];
-  uint8_t _pin, _type;
+  uint8_t DHT_PIN, DHT_TYPE;
   #ifdef __AVR
     // Use direct GPIO access on an 8-bit AVR so keep track of the port and bitmask
     // for the digital pin connected to the DHT.  Other platforms will use digitalRead.
     uint8_t _bit, _port;
   #endif
-  uint32_t _lastreadtime, _maxcycles;
-  bool _lastresult;
-
+  uint32_t DHT_LASTREAD_TIME, DHT_MAX_CYCLES;
+  bool DHT_LAST_RESULT,DEBUG;
   uint32_t expectPulse(bool level);
 
 };

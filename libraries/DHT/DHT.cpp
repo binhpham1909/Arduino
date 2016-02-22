@@ -8,27 +8,21 @@ written by Adafruit Industries
 
 #define MIN_INTERVAL 2000
 
-DHT::DHT(uint8_t pin, uint8_t type, uint8_t count) {
-  _pin = pin;
-  _type = type;
+void DHT::init(uint8_t pin, uint8_t type, uint8_t count, boolean DEBUG) {
+  DHT_PIN = pin;
+  DHT_TYPE = type;
   #ifdef __AVR
     _bit = digitalPinToBitMask(pin);
     _port = digitalPinToPort(pin);
   #endif
-  _maxcycles = microsecondsToClockCycles(1000);  // 1 millisecond timeout for
+  DHT_MAX_CYCLES = microsecondsToClockCycles(1000);  // 1 millisecond timeout for
                                                  // reading pulses from DHT sensor.
   // Note that count is now ignored as the DHT reading algorithm adjusts itself
   // basd on the speed of the processor.
-}
-
-void DHT::begin(void) {
-  // set up the pins!
-  pinMode(_pin, INPUT_PULLUP);
-  // Using this value makes sure that millis() - lastreadtime will be
-  // >= MIN_INTERVAL right away. Note that this assignment wraps around,
-  // but so will the subtraction.
-  _lastreadtime = -MIN_INTERVAL;
-  DEBUG_PRINT("Max clock cycles: "); DEBUG_PRINTLN(_maxcycles, DEC);
+  pinMode(DHT_PIN, INPUT_PULLUP);
+  DHT_LASTREAD_TIME = -MIN_INTERVAL;
+  if(DEBUG) Serial.println("Max clock cycles: "); 
+  if(DEBUG) Serial.println(DHT_MAX_CYCLES, DEC);
 }
 
 //boolean S == Scale.  True == Fahrenheit; False == Celcius
@@ -36,7 +30,7 @@ float DHT::readTemperature(bool S, bool force) {
   float f = 0;
 
   if (read(force)) {
-    switch (_type) {
+    switch (DHT_TYPE) {
     case DHT11:
       f = data[2];
       if(S) {
@@ -72,7 +66,7 @@ float DHT::convertFtoC(float f) {
 float DHT::readHumidity(bool force) {
   float f = 0;
   if (read()) {
-    switch (_type) {
+    switch (DHT_TYPE) {
     case DHT11:
       f = data[0];
       break;
@@ -124,25 +118,23 @@ boolean DHT::read(bool force) {
   // Check if sensor was read less than two seconds ago and return early
   // to use last reading.
   uint32_t currenttime = millis();
-  if (!force && ((currenttime - _lastreadtime) < 2000)) {
-    return _lastresult; // return last correct measurement
+  if (!force && ((currenttime - DHT_LASTREAD_TIME) < 2000)) {
+    return DHT_LAST_RESULT; // return last correct measurement
   }
-  _lastreadtime = currenttime;
+  DHT_LASTREAD_TIME = currenttime;
 
   // Reset 40 bits of received data to zero.
   data[0] = data[1] = data[2] = data[3] = data[4] = 0;
 
   // Send start signal.  See DHT datasheet for full signal diagram:
-  //   http://www.adafruit.com/datasheets/Digital%20humidity%20and%20temperature%20sensor%20AM2302.pdf
-
   // Go into high impedence state to let pull-up raise data line level and
   // start the reading process.
-  digitalWrite(_pin, HIGH);
+  digitalWrite(DHT_PIN, HIGH);
   delay(250);
 
   // First set data line low for 20 milliseconds.
-  pinMode(_pin, OUTPUT);
-  digitalWrite(_pin, LOW);
+  pinMode(DHT_PIN, OUTPUT);
+  digitalWrite(DHT_PIN, LOW);
   delay(20);
 
   uint32_t cycles[80];
@@ -152,24 +144,24 @@ boolean DHT::read(bool force) {
     InterruptLock lock;
 
     // End the start signal by setting data line high for 40 microseconds.
-    digitalWrite(_pin, HIGH);
+    digitalWrite(DHT_PIN, HIGH);
     delayMicroseconds(40);
 
     // Now start reading the data line to get the value from the DHT sensor.
-    pinMode(_pin, INPUT_PULLUP);
+    pinMode(DHT_PIN, INPUT_PULLUP);
     delayMicroseconds(10);  // Delay a bit to let sensor pull data line low.
 
     // First expect a low signal for ~80 microseconds followed by a high signal
     // for ~80 microseconds again.
     if (expectPulse(LOW) == 0) {
-      DEBUG_PRINTLN(F("Timeout waiting for start signal low pulse."));
-      _lastresult = false;
-      return _lastresult;
+      if(DEBUG) Serial.println(F("Timeout waiting for start signal low pulse."));
+      DHT_LAST_RESULT = false;
+      return DHT_LAST_RESULT;
     }
     if (expectPulse(HIGH) == 0) {
-      DEBUG_PRINTLN(F("Timeout waiting for start signal high pulse."));
-      _lastresult = false;
-      return _lastresult;
+      if(DEBUG) Serial.println(F("Timeout waiting for start signal high pulse."));
+      DHT_LAST_RESULT = false;
+      return DHT_LAST_RESULT;
     }
 
     // Now read the 40 bits sent by the sensor.  Each bit is sent as a 50
@@ -192,9 +184,9 @@ boolean DHT::read(bool force) {
     uint32_t lowCycles  = cycles[2*i];
     uint32_t highCycles = cycles[2*i+1];
     if ((lowCycles == 0) || (highCycles == 0)) {
-      DEBUG_PRINTLN(F("Timeout waiting for pulse."));
-      _lastresult = false;
-      return _lastresult;
+      if(DEBUG) Serial.println(F("Timeout waiting for pulse."));
+      DHT_LAST_RESULT = false;
+      return DHT_LAST_RESULT;
     }
     data[i/8] <<= 1;
     // Now compare the low and high cycle times to see if the bit is a 0 or 1.
@@ -206,24 +198,25 @@ boolean DHT::read(bool force) {
     // cycle count so this must be a zero.  Nothing needs to be changed in the
     // stored data.
   }
-
-  DEBUG_PRINTLN(F("Received:"));
-  DEBUG_PRINT(data[0], HEX); DEBUG_PRINT(F(", "));
-  DEBUG_PRINT(data[1], HEX); DEBUG_PRINT(F(", "));
-  DEBUG_PRINT(data[2], HEX); DEBUG_PRINT(F(", "));
-  DEBUG_PRINT(data[3], HEX); DEBUG_PRINT(F(", "));
-  DEBUG_PRINT(data[4], HEX); DEBUG_PRINT(F(" =? "));
-  DEBUG_PRINTLN((data[0] + data[1] + data[2] + data[3]) & 0xFF, HEX);
-
+  
+  if(DEBUG){
+     Serial.println(F("Received:"));
+     Serial.print(data[0], HEX);    Serial.print(F(", ")); 
+     Serial.print(data[1], HEX);    Serial.print(F(", "));
+     Serial.print(data[2], HEX);    Serial.print(F(", "));
+     Serial.print(data[3], HEX);    Serial.print(F(", "));
+     Serial.print(data[4], HEX);    Serial.print(F(" =? "));
+     Serial.println((data[0] + data[1] + data[2] + data[3]) & 0xFF, HEX);  
+  } 
   // Check we read 40 bits and that the checksum matches.
   if (data[4] == ((data[0] + data[1] + data[2] + data[3]) & 0xFF)) {
-    _lastresult = true;
-    return _lastresult;
+    DHT_LAST_RESULT = true;
+    return DHT_LAST_RESULT;
   }
   else {
-    DEBUG_PRINTLN(F("Checksum failure!"));
-    _lastresult = false;
-    return _lastresult;
+    if(DEBUG)   Serial.println(F("Checksum failure!"));
+    DHT_LAST_RESULT = false;
+    return DHT_LAST_RESULT;
   }
 }
 
@@ -241,15 +234,15 @@ uint32_t DHT::expectPulse(bool level) {
   #ifdef __AVR
     uint8_t portState = level ? _bit : 0;
     while ((*portInputRegister(_port) & _bit) == portState) {
-      if (count++ >= _maxcycles) {
+      if (count++ >= DHT_MAX_CYCLES) {
         return 0; // Exceeded timeout, fail.
       }
     }
   // Otherwise fall back to using digitalRead (this seems to be necessary on ESP8266
   // right now, perhaps bugs in direct port access functions?).
   #else
-    while (digitalRead(_pin) == level) {
-      if (count++ >= _maxcycles) {
+    while (digitalRead(DHT_PIN) == level) {
+      if (count++ >= DHT_MAX_CYCLES) {
         return 0; // Exceeded timeout, fail.
       }
     }
