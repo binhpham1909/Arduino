@@ -49,33 +49,6 @@ void ESPHB::Restore(void){
     EEPROMSave(50,&WF_INF);
     ESP.restart();
 }
-////////////////////////////////////////
-///  Group function Write to EEPROM  ///
-////////////////////////////////////////
-template <class T> void ESPHB::EEPROMSave(int StartAddress,T *storageVar){
-    EEPROM.begin(MAX_EEPROM_SIZE);
-	uint8_t * bytesToWriteEEPROM = (uint8_t *)storageVar;
-	const int STORAGE_SIZE = sizeof(*storageVar);
-	for (int i = 0; i < STORAGE_SIZE; i++) {
-		EEPROM.write(StartAddress + i,bytesToWriteEEPROM[i]);
-	}
-	EEPROM.commit();
-    EEPROM.end();
-};
-//
-
-//////////////////////////////////////
-/// Group function Read to EEPROM  ///
-//////////////////////////////////////
-template <class T> void ESPHB::EEPROMRead(int StartAddress,T *storageVar){
-    EEPROM.begin(MAX_EEPROM_SIZE);
-	uint8_t * bytesToReadEEPROM = (uint8_t *)storageVar;
-	const int STORAGE_SIZE = sizeof(*storageVar);
-	for (int i = 0; i < STORAGE_SIZE; i++) {
-		bytesToReadEEPROM[i] = EEPROM.read(StartAddress + i);
-	}
-    EEPROM.end();
-};
 
 //////////////////////////////////////////
 ///     Group function for Serial	   ///
@@ -345,56 +318,8 @@ void ESPHB::wifi_apmode(void){
 //////////////////////////////////////////
 ///     Group function for Utility	   ///
 //////////////////////////////////////////
-//use: ex: StringToArray(&StringFrom, STORAGE.DEVICE_SERIAL, MAX_SERIAL_LEN);
-boolean ESPHB::StringToArray(String *StringFrom, char* arrayTo, int maxlen){
-    int _len=StringFrom->length();
-    if(maxlen>=_len){
-        StringFrom->toCharArray(arrayTo,_len+1);
-        return true;
-    }else{
-        return false;
-    }
-};
 
-// function to convert IP string to IPAdress 32bit
-uint32_t ESPHB::StringToIPAdress(String IPvalue){
-	union bytes32{
-        uint32_t b32;
-        uint8_t b8[4];
-    } mybytes32;
-	int _start=0;	// vị trí xuất phát String IP
-    int _dot=IPvalue.indexOf('.');	// vị trí dấu . đầu tiên
-    int _ends=IPvalue.length();	// tổng chiều dài String IP
-    for(char k=0;k<4;k++){
-        String ipk=IPvalue.substring(_start,_dot);	// octet 1: từ vị trí xuất phát đến dấu . đầu tiên
-        mybytes32.b8[k]=(uint8_t)ipk.toInt();	// convert String to Int
-        _start=_dot+1;	// dấu . đầu thành điểm xuất phát
-        if(k<3){	
-			_dot=IPvalue.indexOf('.',_start);}
-            else{	// tại octet 4(octet cuối) điểm kết thúc là chiều dài String IP(ends)
-              _dot=_ends;};
-    }
-    return mybytes32.b32;
-};
-// Analysis command : ?key:value&&key2=value2 HTTP/1
-// ?	start
-// :	separate
-// $$	end
-// " "	enall (ex: space char in and of request in html)
-void ESPHB::decodeToKeyValue(String *_request, String _separate, String _end,String _enall, String *_key,String *_val){
-    int g_start,g_compare,g_end,i;
-    g_start = _request->indexOf(*_key); // position start of key
-    g_compare = _request->indexOf(_separate,g_start);   // position of charactor separate
-    g_end = _request->indexOf(_end,g_compare);  // position end of value
-    if(g_end<0){    
-      g_end = _request->indexOf(_enall,g_compare);
-    }
-    if(g_start<0){
-      *_val="";
-    }else{
-      *_val=_request->substring(g_compare+_separate.length(), g_end);
-    }
-}
+
 //////////////////////////////////////
 ///     Group function for HTML	   ///
 //////////////////////////////////////
@@ -407,31 +332,7 @@ boolean ESPHB::CheckArlert(String *request){
         return false;
     }
 }
-// Json encode
-void ESPHB::jsonEncode(int _position, String * _s, String _key, String _val){	// header http + content
-	switch (_position) {
-        case ONEJSON:
-        case FIRSTJSON:
-		//	*_s += HTTP_header_ok;
-		//	*_s += FPSTR(lb_HTTP_200);
-            *_s += FPSTR(lb_JSON_OPEN_BRAKE);
-            jsonAdd(_s,_key,_val);
-            *_s+= (_position==ONEJSON) ? FPSTR(lb_JSON_CLOSE_BRAKE) : FPSTR(lb_JSON_NEW_LINE);
-            break;
-        case NEXTJSON:
-            jsonAdd(_s,_key,_val);
-            *_s+= FPSTR(lb_JSON_NEW_LINE);
-            break;
-        case LASTJSON:
-            jsonAdd(_s,_key,_val);
-            *_s+= FPSTR(lb_JSON_CLOSE_BRAKE);
-            break;
-    };
-}
-// Add key, value to Json String
-void ESPHB::jsonAdd(String *_s, String _key,String _val) {
-    *_s += '"' + _key + '"' + ":" + '"' + _val + '"';
-}
+
 // Send GET Request and receive respone from server
 // Ex html GET: "GET /hostlink/local/file.php?key1=value1&&key2=value2 HTTP/1.1\r\nHost: 192.168.0.3\r\nConnection: close\r\nCache-Control: max-age=0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nUser-Agent: wifi-switch\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: vi-VN,vi;q=0.8,fr-FR;q=0.6,fr;q=0.4,en-US;q=0.2,en;q=0.2\r\n\r\n"
 String ESPHB::sendRequest(void){
@@ -528,10 +429,7 @@ void ESPHB::AddGetRequest(String *_s, String _key,String _val) {
     *_s += "&&" + _key + "=" + _val;
 }
 
-// Get value at key in GET Request
-void ESPHB::GETValue(String *_request,String _key,String *_val){
-	decodeToKeyValue(_request,"=","&&"," ",&_key,_val);
-}
+
 // Handler Event when ESP8266 server receive request
 String ESPHB::httpHandlerEvent(String *request){
 	String cssid,cpassword,ckey,cserver,respone="";
