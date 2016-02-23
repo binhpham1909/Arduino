@@ -1,7 +1,9 @@
-#ifndef EEPROMData_h
-#define EEPROMData_h
+#ifndef BEEPROM_h
+#define BEEPROM_h
 
+#include <ESP8266WiFi.h>
 #include <EEPROM.h>
+#include "BLANGUE.h"
 // EEPROM
 // EEPROM save string need string size + 2 byte, fisrt byte store len of string, second byte store max len of string, after are bytes of string
 // EEPROM save boolean, byte need 1 byte
@@ -48,7 +50,7 @@ struct EEPROM_WIFI {
     uint8_t MAX_REQUEST_TIMEOUT;    // 250 use for time of wifi timeout connect by MAX_REQUEST_TIMEOUT * 0.5s   
 } ;
 
-class EEPROMData{
+class BEEPROM{
     public:
         template <class T> void EEPROMSave(int StartAddress,T *storageVar);
         template <class T> void EEPROMRead(int StartAddress,T *storageVar);    

@@ -1,9 +1,12 @@
-#include <Binh.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h> 
 #include <ESP8266WebServer.h>
-#include <EEPROM.h>
 
+#include <BLANGUE.h>
+#include <BJSON.h>
+#include <BEEPROM.h>
+#include <BString.h>
+#include <BHTML.h>
 
 #define ALERT_LED 14
 #define DHTPIN 0

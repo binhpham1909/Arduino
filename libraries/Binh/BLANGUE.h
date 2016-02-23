@@ -30,21 +30,13 @@ void getDecode(request *s, String http_rq);
 		void jsonEncode(int pos, String * s, String key, String val);
 */
 
-#ifndef Binh_h
-#define Binh_h
+#ifndef BLANGUE_h
+#define BLANGUE_h
 
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h> 
-#include <ESP8266WebServer.h>
-#include <EEPROM.h>
-#include <PGMSPACE.h>
+
 #include "DHT.h"
 
-// Request encode
-#define	ONEGET	1
-#define	FIRSTGET	2
-#define	NEXTGET	3
-#define	LASTGET	4
+
 
 const char lb_CONNECTING[] PROGMEM = "Connecting to:";
 const char lb_CONNECTED[] PROGMEM = "Connected ";
@@ -95,8 +87,13 @@ const char lb_RESTORE_START[] PROGMEM = "Starting Restore...";
 const char lb_EMPTY_IP_STATIC[] PROGMEM = "Empty static IP, disable DHCP.";
 const char lb_EMPTY_SSID[] PROGMEM = "Clear Wifi SSID.";
 const char lb_EMPTY_PASSWORD[] PROGMEM = "Clear Wifi PASSWORD.";
-        
-
+ 
+const char lb_SETUP_REQUEST_TIMEOUT[] PROGMEM = "Set MAX request timeout to: ";       
+const char lb_SETUP_DEBUG[] PROGMEM = "Set DEBUG to: ";
+const char lb_YES[] PROGMEM = "YES";
+const char lb_NO[] PROGMEM = "NO";
+const char lb_EEPROM_READING[] PROGMEM = "Reading EEPROM..";
+const char lb_EEPROM_WRITING[] PROGMEM = "Writing EEPROM..";
 
 class ESPHB	// class chua cac ham xu ly cua thu vien
 {
@@ -105,41 +102,26 @@ class ESPHB	// class chua cac ham xu ly cua thu vien
         
 		void Startup(void);
         void Restore(void);
-        void wifi_connect(void);
-        void wifi_reconnect(void);
-        void wifi_apmode(void);
         void SerialEvent(void);
 
-        boolean CheckArlert(String *request);
-        boolean sendGETRequest(String *_link,String *respone);
-        String sendRequest(void);
-        void AddGetRequest(String *_s, String _key,String _val);
-
+        boolean CheckArlert(String *request);     
         String httpHandlerEvent(String *request);
-        boolean togglePin(String _pinname, String _value);
-        uint8_t getPin(String _pin);
-        boolean pinValue(String _value);
-        void LedBlink(unsigned long _interval);
-        void LedOn(void);
-        void LedOff(void);
-        boolean Timer(unsigned long *_last_time, unsigned long _interval);
+
 	private:
         EEPROM_DEVICE DV_INF;
         EEPROM_WIFI WF_INF;
         DHT dht;
         boolean DEBUG = true;
 		boolean LOGINED = false;
-        boolean CONNECTED=false;
-        boolean	APMODE=false;
+
 		boolean SERIAL_COMPLETE = false;
 
-		unsigned char LEDSTATUS;
+
         String	SERIAL_RECEIVER = "";
         String  DEFAULT_KEY = "1234567890";
         String  DEFAULT_APPASSWORD = "hbinvent";
         String  null = "";
                
-		unsigned long last_blink=0;
-		boolean LedState=LOW;
+
 };
 #endif

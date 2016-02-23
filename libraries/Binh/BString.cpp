@@ -31,7 +31,7 @@ uint32_t BString::StringToIPAdress(String IPvalue){
     return mybytes32.b32;
 };
 // Get value at key in GET Request
-String BString::GETValue(String *_request,String _key,String *_val){
+String BString::htmlGETValue(String *_request,String _key){
 	return decodeToKeyValue(_request,"=","&&"," ",&_key);
 }
 // Analysis command : ?key:value&&key2=value2 HTTP/1
