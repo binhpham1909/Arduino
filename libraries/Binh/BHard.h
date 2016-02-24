@@ -3,7 +3,7 @@
 
 #include <ESP8266WiFi.h>
 
-class BESP8266:public BString, public BHTML, public BJSON, public BWIFI{
+class BESP8266{
     public:
         boolean togglePin(String _pinname, String _value);
         uint8_t getPin(String _pin);

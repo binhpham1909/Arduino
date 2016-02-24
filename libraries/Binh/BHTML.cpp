@@ -42,6 +42,6 @@ String BHTML::sendRequest(char* _server,uint16_t port, String *_tosend){
 	return _respone;
 }
 // Add key, value to GETRequest String
-void BHTML::AddGetRequest(String *_s, String _key,String _val) {
+void BHTML::addGETKeyValue(String *_s, String _key,String _val) {
     *_s += "&&" + _key + "=" + _val;
 }

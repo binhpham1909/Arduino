@@ -15,7 +15,7 @@ class BHTML{
         BHTML(uint8_t _request_timeout, boolean _debug);
         String sendRequest(char* _server,uint16_t port, String *_tosend);
     private:
-        void AddGetRequest(String *_s, String _key,String _val);
+        void addGETKeyValue(String *_s, String _key,String _val);
         uint8_t MAX_REQUEST_TIMEOUT = 3;
         boolean DEBUG = true;
 };
