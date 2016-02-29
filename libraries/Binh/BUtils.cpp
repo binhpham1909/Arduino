@@ -1,21 +1,27 @@
-#include "BString.h"
-//use: ex: StringToArray(&StringFrom, STORAGE.DEVICE_SERIAL, MAX_SERIAL_LEN);
-boolean BString::StringToArray(String *StringFrom, char* arrayTo, int maxlen){
-    int _len=StringFrom->length();
-    if(maxlen>=_len){
-        StringFrom->toCharArray(arrayTo,_len+1);
-        return true;
-    }else{
-        return false;
-    }
-};
+#include "BUtils.h"
 
+uint8_t BUtils::numberOfCharInString(String *StringFrom, String findChar){
+    uint16_t lastPositionOfChar = 0, nextPositionOfChar = 0;
+    uint8_t numberOfChar = 0;
+    do{
+        nextPositionOfChar = StringFrom->indexOf(findChar,lastPositionOfChar);
+        if(nextPositionOfChar>lastPositionOfChar){
+            numberOfChar++;
+            lastPositionOfChar = nextPositionOfChar;
+        }        
+    }while(nextPositionOfChar>0)
+    return numberOfChar;
+}
 // function to convert IP string to IPAdress 32bit
-uint32_t BString::StringToIPAdress(String IPvalue){
+uint32_t BUtils::StringToIPAdress(String IPvalue){
+    if(numberOfCharInString(&IPvalue, ".")<>4){
+        return 0;
+    }
 	union bytes32{
         uint32_t b32;
         uint8_t b8[4];
     } mybytes32;
+    mybytes32.b32 = 0;
 	int _start=0;	// vị trí xuất phát String IP
     int _dot=IPvalue.indexOf('.');	// vị trí dấu . đầu tiên
     int _ends=IPvalue.length();	// tổng chiều dài String IP
@@ -30,16 +36,26 @@ uint32_t BString::StringToIPAdress(String IPvalue){
     }
     return mybytes32.b32;
 };
-// Get value at key in GET Request
-String BString::htmlGETValue(String *_request,String _key){
-	return decodeToKeyValue(_request,"=","&&"," ",&_key);
-}
+
+
+//use: ex: StringToArray(&StringFrom, STORAGE.DEVICE_SERIAL, MAX_SERIAL_LEN);
+boolean BUtils::StringToArray(String *StringFrom, char* arrayTo, int maxlen){
+    int _len=StringFrom->length();
+    if(maxlen>_len){
+        StringFrom->toCharArray(arrayTo,_len+1);
+        return true;
+    }else{
+        return false;
+    }
+};
+
+
 // Analysis command : ?key:value&&key2=value2 HTTP/1
 // ?	start
 // :	separate
 // $$	end
 // " "	enall (ex: space char in and of request in html)
-String BString::decodeToKeyValue(String *_request, String _separate, String _end,String _enall, String *_key){
+String BUtils::StringToKeyValue(String *_request, String _separate, String _end,String _enall, String *_key){
     int g_start,g_compare,g_end,i;
     g_start = _request->indexOf(*_key); // position start of key
     g_compare = _request->indexOf(_separate,g_start);   // position of charactor separate
@@ -52,4 +68,9 @@ String BString::decodeToKeyValue(String *_request, String _separate, String _end
     }else{
       return _request->substring(g_compare+_separate.length(), g_end);
     }
+}
+
+// Get value at key in GET Request
+String BUtils::htmlGETValue(String *_request,String _key){
+	return decodeToKeyValue(_request,"=","&&"," ",&_key);
 }

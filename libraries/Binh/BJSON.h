@@ -9,15 +9,17 @@
 #define	BJSONNEXT	3
 #define	BJSONLAST	4
 
-const char lb_JSON_OPEN_BRAKE[] PROGMEM = "{\r\n";
-const char lb_JSON_CLOSE_BRAKE[] PROGMEM = "\r\n}";
-const char lb_JSON_NEW_LINE[] PROGMEM = ",\r\n";
-
 class BJSON{
     public:
-        void JsonEncode(int _position, String * _s, String _key, String _val);
+        void JsonEncode(String * _s, int _position, String _key, String _val);
+        String JsonDecode(String * _s, String _key);
     private:
         void JsonAdd(String *_s, String _key,String _val);
+        String BJSON_OPEN_BRAKE = "{\r\n";
+        String BJSON_CLOSE_BRAKE = "\r\n}";
+        String BJSON_NEW_LINE = ",\r\n";
+        String BJSON_DOUBLE_QUOTE = '"';
+        String BJSON_DOUBLE_DOT = ":";
 };
 
 #endif

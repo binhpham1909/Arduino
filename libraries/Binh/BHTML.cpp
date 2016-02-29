@@ -29,12 +29,12 @@ boolean BHTML::sendRequest(char* _server,uint16_t port, String *_tosend, String 
                 while (client.available()) { 
                     respone = client.readString();
                 }
-                sendSuccess = true;
                 *_respone = respone;
                 client.stop();
                 if(DEBUG&&sendSuccess) Serial.println(respone);
                 positionFuncSendRequest = 0;           
             }
+            sendSuccess = true;
             break;
     }
     respone = "";                                                                                                                         
