@@ -1,6 +1,6 @@
-#include "BUtils.h"
+#include "BString.h"
 
-uint8_t BUtils::numberOfCharInString(String *StringFrom, String findChar){
+uint8_t BString::numberOfCharInString(String *StringFrom, String findChar){
     uint16_t lastPositionOfChar = 0, nextPositionOfChar = 0;
     uint8_t numberOfChar = 0;
     do{
@@ -13,7 +13,7 @@ uint8_t BUtils::numberOfCharInString(String *StringFrom, String findChar){
     return numberOfChar;
 }
 // function to convert IP string to IPAdress 32bit
-uint32_t BUtils::StringToIPAdress(String IPvalue){
+uint32_t BString::StringToIPAdress(String IPvalue){
     if(numberOfCharInString(&IPvalue, ".")<>4){
         return 0;
     }
@@ -39,7 +39,7 @@ uint32_t BUtils::StringToIPAdress(String IPvalue){
 
 
 //use: ex: StringToArray(&StringFrom, STORAGE.DEVICE_SERIAL, MAX_SERIAL_LEN);
-boolean BUtils::StringToArray(String *StringFrom, char* arrayTo, int maxlen){
+boolean BString::StringToArray(String *StringFrom, char* arrayTo, int maxlen){
     int _len=StringFrom->length();
     if(maxlen>_len){
         StringFrom->toCharArray(arrayTo,_len+1);
@@ -55,7 +55,7 @@ boolean BUtils::StringToArray(String *StringFrom, char* arrayTo, int maxlen){
 // :	separate
 // $$	end
 // " "	enall (ex: space char in and of request in html)
-String BUtils::StringToKeyValue(String *_request, String _separate, String _end,String _enall, String *_key){
+String BString::StringToKeyValue(String *_request, String _separate, String _end,String _enall, String *_key){
     int g_start,g_compare,g_end,i;
     g_start = _request->indexOf(*_key); // position start of key
     g_compare = _request->indexOf(_separate,g_start);   // position of charactor separate
@@ -71,6 +71,6 @@ String BUtils::StringToKeyValue(String *_request, String _separate, String _end,
 }
 
 // Get value at key in GET Request
-String BUtils::htmlGETValue(String *_request,String _key){
+String BString::htmlGETValue(String *_request,String _key){
 	return decodeToKeyValue(_request,"=","&&"," ",&_key);
 }
