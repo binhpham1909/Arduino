@@ -5,7 +5,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "BLANGUE.h"
 
 extern "C" {
 #include "c_types.h"
@@ -21,6 +20,9 @@ extern "C" {
 // EEPROM save int need 2 byte
 // EEPROM save float, IPAddress need 4 byte
 #define MAX_EEPROM_SIZE 512		// Lan khoi dong dau tien
+
+const char lb_EEPROM_READING[] PROGMEM = "Reading EEPROM..";
+const char lb_EEPROM_WRITING[] PROGMEM = "Writing EEPROM..";
 
 class BEEPROM{
     public:
