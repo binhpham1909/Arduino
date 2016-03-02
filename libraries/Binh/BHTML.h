@@ -1,28 +1,19 @@
-#ifndef BJSON_h
-#define BJSON_h
+#ifndef BHTML_h
+#define BHTML_h
 
 #include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include "BLANGUE.h"
-// Request encode
-#define	ONEGET	1
-#define	FIRSTGET	2
-#define	NEXTGET	3
-#define	LASTGET	4
+#include <PGMSPACE.h>
+// Json encode
+#define	BKVONE	1
+#define	BKVFIRST	2
+#define	BKVNEXT	3
+#define	BKVLAST	4
 
 class BHTML{
     public:
-        BHTML(uint8_t _request_timeout, boolean _debug);
-        boolean sendRequest(char* _server,uint16_t port, String *_tosend, String *_respone);
-    protected:
-        void addGETKeyValue(String *_s, String _key,String _val);
+        String createPOSTRequest();
+        String createGETRequest();
     private:
-        boolean DEBUG = true;
-        WiFiClient client;
-        uint32_t lastCheckTime =0;  // check time to calculate delta time replace delay function
-        uint32_t delayTimeWaitRespone = 200;    // time delay wait for server respone
-        boolean sendSuccess = false;
-        boolean positionFuncSendRequest = 0;
-        String respone = "";
+        void createRequest();
 };
 #endif

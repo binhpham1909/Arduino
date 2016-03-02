@@ -1,9 +1,9 @@
-#ifndef BUtils_h
-#define BUtils_h
+#ifndef BString_h
+#define BString_h
 
-#include <ESP8266WiFi.h>
+//#include <ESP8266WiFi.h>
 
-class BUtils{
+class BString{
     public:
         uint8_t numberOfCharInString(String *StringFrom, String findChar);
         boolean StringToArray(String *StringFrom, char* arrayTo, int maxlen);
@@ -12,5 +12,4 @@ class BUtils{
     protected:
         String StringToKeyValue(String *_request, String _separate, String _end,String _enall, String *_key);    
 };
-
 #endif

@@ -21,5 +21,4 @@ class BJSON{
         String BJSON_DOUBLE_QUOTE = '"';
         String BJSON_DOUBLE_DOT = ":";
 };
-
 #endif

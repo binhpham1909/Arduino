@@ -1,46 +1,34 @@
 #include "BHTML.h"
-
-BHTML::BHTML(uint8_t _request_timeout, boolean _debug){
-    delayTimeWaitRespone = _request_timeout;
-    DEBUG = _debug;
+// Json encode
+void BHTML::JsonEncode(String * _s, int _position, String _key, String _val){	// header http + content
+	switch (_position) {
+        case BJSONONE:
+        case BJSONFIRST:
+		//	*_s += HTTP_header_ok;
+		//	*_s += FPSTR(lb_HTTP_200);
+            *_s += BJSON_OPEN_BRAKE;
+            JsonAdd(_s,_key,_val);
+            *_s+= (_position==BJSONONE) ? BJSON_CLOSE_BRAKE : BJSON_NEW_LINE;
+            break;
+        case BJSONNEXT:
+            JsonAdd(_s,_key,_val);
+            *_s+= BJSON_NEW_LINE;
+            break;
+        case BJSONLAST:
+            JsonAdd(_s,_key,_val);
+            *_s+= BJSON_CLOSE_BRAKE;
+            break;
+    };
 }
-// Send GET Request and receive respone from server
-// Ex html GET: "GET /hostlink/local/file.php?key1=value1&&key2=value2 HTTP/1.1\r\nHost: 192.168.0.3\r\nConnection: close\r\nCache-Control: max-age=0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nUser-Agent: wifi-switch\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: vi-VN,vi;q=0.8,fr-FR;q=0.6,fr;q=0.4,en-US;q=0.2,en;q=0.2\r\n\r\n"
-boolean BHTML::sendRequest(char* _server,uint16_t port, String *_tosend, String *_respone){
-    switch(positionFuncSendRequest){
-        case 0:
-            respone="";
-            if (!client.connect(_server, port)) {
-                if(DEBUG)  Serial.println(FPSTR(lb_FAILED_CONNECT));
-                return false;
-            };
-            positionFuncSendRequest++;
-            sendSuccess = false;
-            break;
-        case 1:
-            client.print(*_tosend);
-            lastCheckTime = milis();
-            if(DEBUG){  Serial.print(F("\n");   Serial.println(*_tosend);   };
-            positionFuncSendRequest++;
-            sendSuccess = false;
-            break;
-        case 2:
-            if((milis()-lastCheckTime)>delayTimeWaitRespone){
-                while (client.available()) { 
-                    respone = client.readString();
-                }
-                *_respone = respone;
-                client.stop();
-                if(DEBUG&&sendSuccess) Serial.println(respone);
-                positionFuncSendRequest = 0;           
-            }
-            sendSuccess = true;
-            break;
-    }
-    respone = "";                                                                                                                         
-	return sendSuccess;
+String JsonDecode(String * _s, String _key){
+    uint16_t startPosition = 0, endPosition = 0;
+    startPosition = _s->indexOf(_key,startPosition);
+    if(startPosition<0) return "";
+    startPosition = _s->indexOf(':"',startPosition);
+    endPosition = _s->indexOf('"',startPosition+2);
+    return _s->substring(startPosition+2, endPosition);
 }
-// Add key, value to GETRequest String
-void BHTML::addGETKeyValue(String *_s, String _key,String _val) {
-    *_s += "&&" + _key + "=" + _val;
+// Add key, value to Json String
+void BJSON::JsonAdd(String *_s, String _key,String _val) {
+    *_s += BJSON_DOUBLE_QUOTE + _key + BJSON_DOUBLE_QUOTE + BJSON_DOUBLE_DOT + BJSON_DOUBLE_QUOTE + _val + BJSON_DOUBLE_QUOTE;
 }
