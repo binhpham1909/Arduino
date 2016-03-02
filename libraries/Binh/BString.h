@@ -1,7 +1,7 @@
 #ifndef BString_h
 #define BString_h
 
-//#include <ESP8266WiFi.h>
+#include <ESP8266WiFi.h>
 
 class BString{
     public:

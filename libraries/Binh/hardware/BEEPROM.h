@@ -13,6 +13,7 @@ extern "C" {
 #include "osapi.h"
 #include "spi_flash.h"
 }
+#include "BDef.h"
 
 // EEPROM
 // EEPROM save string need string size + 2 byte, fisrt byte store len of string, second byte store max len of string, after are bytes of string

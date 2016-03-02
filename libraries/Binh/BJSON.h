@@ -18,7 +18,5 @@ class BJSON{
         String BJSON_OPEN_BRAKE = "{\r\n";
         String BJSON_CLOSE_BRAKE = "\r\n}";
         String BJSON_NEW_LINE = ",\r\n";
-        String BJSON_DOUBLE_QUOTE = '"';
-        String BJSON_DOUBLE_DOT = ":";
 };
 #endif

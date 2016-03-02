@@ -9,12 +9,12 @@ uint8_t BString::numberOfCharInString(String *StringFrom, String findChar){
             numberOfChar++;
             lastPositionOfChar = nextPositionOfChar;
         }        
-    }while(nextPositionOfChar>0)
+    }while(nextPositionOfChar>0);
     return numberOfChar;
 }
 // function to convert IP string to IPAdress 32bit
 uint32_t BString::StringToIPAdress(String IPvalue){
-    if(numberOfCharInString(&IPvalue, ".")<>4){
+    if(numberOfCharInString(&IPvalue, ".")!=4){
         return 0;
     }
 	union bytes32{
@@ -72,5 +72,5 @@ String BString::StringToKeyValue(String *_request, String _separate, String _end
 
 // Get value at key in GET Request
 String BString::htmlGETValue(String *_request,String _key){
-	return decodeToKeyValue(_request,"=","&&"," ",&_key);
+	return StringToKeyValue(_request,"=","&&"," ",&_key);
 }
