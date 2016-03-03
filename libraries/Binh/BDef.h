@@ -64,12 +64,6 @@ const char lb_TRY_RECONNECT[] PROGMEM = "Try reconnect ";
 const char lb_ERROR_CONNECT[] PROGMEM = "Connect ERROR!";
 const char lb_TIMEOUT_CONNECT[] PROGMEM = "Connect timeout!";
 
-
-
-
-
-
-
 const char lb_LOGIN_FAILED[] PROGMEM = "Enter password for login.";
 const char lb_LOGIN_SUCCESS[] PROGMEM = "You had login lo system.";
 const char lb_SERIAL[] PROGMEM = "Serial: ";
@@ -91,8 +85,6 @@ const char lb_GATEWAY[] PROGMEM = "Gateway ";
 const char lb_DHCP_ENABLE[] PROGMEM = "Enable DHCP";
 const char lb_DHCP_DISABLE[] PROGMEM = "Disable DHCP";
 const char lb_COMMAND_ERROR[] PROGMEM = "Command ERROR.";
-       
-
         
 const char lb_RESTORE_START[] PROGMEM = "Starting Restore...";
 const char lb_EMPTY_IP_STATIC[] PROGMEM = "Empty static IP, disable DHCP.";
@@ -142,6 +134,11 @@ typedef struct EEPROM_WIFI {
     uint8_t MAX_REQUEST_TIMEOUT;    // 250 use for time of wifi timeout connect by MAX_REQUEST_TIMEOUT * 0.5s   
 } BNETINFO;
 
+// dictionnary typedef
+struct Dict {
+    String key;
+    String value;
+};
 class ESPHB	// class chua cac ham xu ly cua thu vien
 {
 	public:
