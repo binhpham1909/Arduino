@@ -134,11 +134,7 @@ typedef struct EEPROM_WIFI {
     uint8_t MAX_REQUEST_TIMEOUT;    // 250 use for time of wifi timeout connect by MAX_REQUEST_TIMEOUT * 0.5s   
 } BNETINFO;
 
-// dictionnary typedef
-struct Dict {
-    String key;
-    String value;
-};
+
 class ESPHB	// class chua cac ham xu ly cua thu vien
 {
 	public:

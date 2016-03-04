@@ -6,6 +6,7 @@
 #include "BWIFI.h"  // used: BWifi.func
 #include "BUTILS.h" // used: Butils.func
 #include "BClient.h"  // used: BClient def new client
+#include "BDictionary.h"
 
 #define ALERT_LED 14
 #define DHTPIN 0
@@ -16,7 +17,8 @@ EEPROM_WIFI WF_INF;
 
 
 BClient client;
-BWIFI BWifi;
+BWIFI wifi;
+BDict data;
 //ESPHB esp(ALERT_LED);
 //DHT dht(DHTPIN, DHTTYPE, 11);
 // Create wifi server
@@ -31,11 +33,17 @@ void setup() {
   Serial.begin(115200); // Open serial communications and wait for port to open:
   EEPROM.get(0,DV_INF);
   EEPROM.get(50,WF_INF);
+
+  data.set("serial",String(DV_INF.DV_SERIAL));
+  data.set("ssid",String(WF_INF.WF_SSID));
+  data.set("password",String(WF_INF.WF_PASSWORD));
+  data.set("apssid",String(WF_INF.AP_SSID));
+  data.set("appass",String(WF_INF.AP_PASSWORD));
   
   client.config(WF_INF.MAX_REQUEST_TIMEOUT,DV_INF.DEBUG);
-  BWifi.config(DV_INF.DEBUG);
+  wifi.config(DV_INF.DEBUG);
   
-  BWifi.connect(WF_INF.WF_SSID, WF_INF.WF_PASSWORD);
+  wifi.connect(WF_INF.WF_SSID, WF_INF.WF_PASSWORD);
   server.begin();    // Start the server
   Serial.println("Server started");
 }

@@ -1,5 +1,6 @@
 #include "BDictionary.h"
 
+
 String BDict::get(String _key){
     uint16_t _index = checkKey(_key);
     if(_index!= NULL_KEY)
@@ -7,7 +8,9 @@ String BDict::get(String _key){
     else
         return "";
 }
-
+uint16_t BDict::getDictSize(){
+    return d_size;
+}
 uint16_t BDict::checkKey(String _key){
     uint16_t _index = NULL_KEY;
     for(uint16_t i=0; _index!=NULL_KEY; i++)
@@ -20,11 +23,12 @@ void BDict::set(String _key, String _value){
     uint16_t _index = checkKey(_key);
     if(_index!= NULL_KEY)   // update value
         updateDict(_index, _value);
-    else    // insert value
+    else{
         Dict _kv;
         _kv.key = _key;
         _kv.value = _value;
-        insertDict(_kv);   
+        insertDict(_kv);         
+    }    // insert value
 }
 
 uint16_t BDict::insertDict(Dict &_kv){

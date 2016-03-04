@@ -36,7 +36,6 @@ boolean BClient::sendRequest(char* _server,uint16_t port, String *_tosend, Strin
                 if(DEBUG&&sendSuccess) Serial.println(respone);          
             }
             break;
-    }
-    respone = "";                                                                                                                         
+    }                                                                                                                      
 	return sendSuccess;
 }
