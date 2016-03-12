@@ -36,8 +36,39 @@ void getDecode(request *s, String http_rq);
 #include <PGMSPACE.h>
 #include "DHT.h"
 
-#define MAX_ADMIN_LEN    10
-#define MAX_SERIAL_LEN   10	
+#ifdef DEBUG_ESP_HBI
+#ifdef DEBUG_ESP_PORT
+#define DEBUG_HBI(...) DEBUG_ESP_PORT.print( __VA_ARGS__ )
+#define DEBUGln_HBI(...) DEBUG_ESP_PORT.println( __VA_ARGS__ )
+
+
+#endif
+#endif
+
+#ifndef DEBUG_HBI
+#define DEBUG_HBI(...)
+#define DEBUGln_HBI(...)
+#endif
+
+#define MAX_EEPROM_SIZE 512
+#define LED_ALERT 0
+#define WF_SSID_ADD 10
+#define WF_PASSWORD_ADD 32
+#define AP_SSID_ADD 64
+#define AP_PASSWORD_ADD 96
+#define DV_PASSWORD_ADD 128
+#define WF_KEY_ADD  160
+#define SERVER_IP_ADD   192
+#define USED_DHT_ADD    196
+#define DHT_PIN_ADD 197
+#define DHT_TYPE_ADD    198
+#define USE_DS18B20_ADD 199
+#define DS18B20_PIN_ADD 200
+#define DS18B20_TYPE_ADD    201
+#define WF_ISSTATIC_IP_ADD 202
+#define WF_STATIC_IP_ADD 203
+#define WF_CONNECT_TIMEOUT_ADD 207
+#define WF_REQUEST_TIMEOUT_ADD 208
 
 #define MAX_SSID_LEN     32
 #define MAX_PASSWORD_LEN 32	// Key to control 12           Bytes 32 to 43
@@ -104,63 +135,4 @@ const char lb_HTTP_HEADER_VERSION[] PROGMEM = " HTTP/1.1\r\n";
 const char lb_HTTP_HEADER_HOST[] PROGMEM = "Host: ";
 const char lb_HTTP_HEADER_CONNECTION[] PROGMEM = "Connection: close\r\nCache-Control: max-age=0\r\nAccept: text/html,text/plain\r\nUser-Agent: Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) coc_coc_browser/50.2.175 Chrome/44.2.2403.175 Safari/537.36\r\nAccept-Encoding: gzip, deflate, sdch\r\nAccept-Language: en-US,en\r\n\r\n";
 
-
-// first 50 bytes from 0 - 49 for device infomation
-typedef struct EEPROM_DEVICE {
-    uint8_t DEBUG;  //  0
-    uint8_t FIRST_START;    // 1
-    char DV_ADMIN[MAX_ADMIN_LEN + 1];   // 2  - 12 Admin password to setup by serial + null
-    char DV_SERIAL[MAX_SERIAL_LEN + 1]; // 13 - 23 IMEI/Serial of device + null
-    uint8_t USE_DHT;    // 24
-    uint8_t DHT_PIN;    // 25
-    uint8_t DHT_TYPE;   // 26
-    uint8_t USE_DS18B20;// 27
-    uint8_t DS18B20_PIN; // 28
-    uint8_t DS18B20_TYPE; // 29
-} BDEVICE;
-
-// after from 50 - 2 for wifi
-typedef struct EEPROM_WIFI {
-    uint8_t IS_STATICIP;    // 50 use for enable/disable static ip
-    uint8_t WF_CONN_TIMEOUT;    // 51 use for time of wifi timeout connect by WF_CONN_TIMEOUT * 0.5s
-    char WF_SSID[MAX_SSID_LEN + 1]; // 52 - 84 ssid + null
-    char WF_PASSWORD[MAX_PASSWORD_LEN + 1]; // 85 - 117 WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
-    uint32_t WF_STATICIP; // 118 - 121 IP of staticIP, if empty use DHCP
-    char WF_KEY[MAX_KEY_LEN + 1]; // 122 - 132 key to control by network + null
-    char MASTER_SERVER[MAX_SERVER_LEN + 1]; // 133 - 181 server process sensor (ex Pi2) + null
-    uint16_t MASTER_SERVER_PORT; // 182-183  port for listen of server process sensor
-    char AP_SSID[MAX_SSID_LEN + 1]; // 184 - 216 AP ssid + null
-    char AP_PASSWORD[MAX_PASSWORD_LEN + 1]; // 217 - 249 AP WiFi password,  if empyt use OPEN, else use AUTO (WEP/WPA/WPA2) + null
-    uint8_t MAX_REQUEST_TIMEOUT;    // 250 use for time of wifi timeout connect by MAX_REQUEST_TIMEOUT * 0.5s   
-} BNETINFO;
-
-
-class ESPHB	// class chua cac ham xu ly cua thu vien
-{
-	public:
-		ESPHB(unsigned char _ledpin);
-        
-		void Startup(void);
-        void Restore(void);
-        void SerialEvent(void);
-
-        boolean CheckArlert(String *request);     
-        String httpHandlerEvent(String *request);
-
-	private:
-        
-        DHT dht;
-        boolean DEBUG = true;
-		boolean LOGINED = false;
-
-		boolean SERIAL_COMPLETE = false;
-
-
-        String	SERIAL_RECEIVER = "";
-        String  DEFAULT_KEY = "1234567890";
-        String  DEFAULT_APPASSWORD = "hbinvent";
-        String  null = "";
-               
-
-};
 #endif

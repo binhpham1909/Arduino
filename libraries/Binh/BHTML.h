@@ -11,7 +11,7 @@
 #define	LASTGET	4
 
 
-class BHTML: public BJSON{
+class BHTML{
     public:
         void createPOSTRequest(void);
         void createGETRequest(void);

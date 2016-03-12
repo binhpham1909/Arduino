@@ -7,12 +7,11 @@
 #include "BHTML.h"
 
 
-class BClient:public BHTML {
+class BClient:public BHTML,public BJSON {
     public:
-        void config(uint8_t _request_timeout, boolean _debug);
-        boolean sendRequest(char* _server,uint16_t port, String *_tosend, String *_respone);
+        void config(uint8_t _request_timeout);
+        boolean sendRequest(uint32_t _server,uint16_t port, String *_tosend, String *_respone);
     private:
-        boolean DEBUG = true;
         WiFiClient client;
         uint32_t lastCheckTime =0;  // check time to calculate delta time replace delay function
         uint32_t delayTimeWaitRespone = 200;    // time delay wait for server respone

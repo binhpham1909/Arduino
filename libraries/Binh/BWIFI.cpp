@@ -2,32 +2,40 @@
 //////////////////////////////////////
 ///     Group function for WiFi	   ///
 //////////////////////////////////////
-void BWIFI::config(boolean _debug){
-    DEBUG = _debug;
+void BWIFI::init(){
+    readData();
+}
+uint32_t BWIFI::getServer(void){
+    return server_ip;
 };
+uint8_t BWIFI::getRequestTimeout(void){
+    return wf_request_timeout;
+}
 // Connect to wifi
-boolean BWIFI::connect(char* _ssid, char* _password){
+void BWIFI::connect(void){
 	CONNECTED=false;
 	lastConnect=millis();	// khởi tạo biến timeout
-	if(DEBUG) Serial.println(FPSTR(lb_CONNECTING));
-	if(DEBUG) {   Serial.print(FPSTR(lb_SSID));   Serial.println(_ssid);}
-	if(DEBUG) {   Serial.print(FPSTR(lb_PASSWORD));Serial.println(_password);}	
-	WiFi.begin(_ssid, _password);	// kết nối tới mạng wifi
+    DEBUGln_HBI(FPSTR(lb_CONNECTING));
+    DEBUG_HBI(FPSTR(lb_SSID));    DEBUGln_HBI(wf_ssid);
+    DEBUG_HBI(FPSTR(lb_PASSWORD));    DEBUGln_HBI(wf_password);
+	WiFi.begin(wf_ssid, wf_password);	// kết nối tới mạng wifi
 };
 boolean BWIFI::checkConnected(void){
 	if(WiFi.status() != WL_CONNECTED){
-        if(DEBUG) Serial.print(FPSTR(lb_DOT));
-        if(DEBUG&&(getConnectTimeOut()>maxTimeOut)) Serial.println(FPSTR(lb_FAILED_CONNECT));
+        DEBUG_HBI(FPSTR(lb_DOT));
+        if(getConnectTimeOut()>wf_connect_timeout){
+            DEBUGln_HBI(FPSTR(lb_FAILED_CONNECT));
+        }
 		CONNECTED=false;
 	}else{
         CONNECTED=true;
-        if(DEBUG) Serial.println(FPSTR(lb_CONNECTED));
+        DEBUGln_HBI(FPSTR(lb_CONNECTED));
     }
     return CONNECTED;
 }
-void BWIFI::reConnect(char* _ssid, char* _password){
-	if(!CONNECTED&&(getConnectTimeOut()>maxTimeOut)){
-		connect(_ssid,_password);
+void BWIFI::reConnect(void){
+	if(!CONNECTED&&(getConnectTimeOut()>wf_connect_timeout)){
+		connect();
 	}
 }
 uint8_t BWIFI::getConnectTimeOut(void){
@@ -36,12 +44,12 @@ uint8_t BWIFI::getConnectTimeOut(void){
 void BWIFI::setSTAMode(void){
     APMODE = false;
 	WiFi.mode(WIFI_STA);
-    if(DEBUG)   Serial.println(FPSTR(lb_STAMODE));
+    DEBUG_HBI(FPSTR(lb_STAMODE));
 }
-void BWIFI::setAPMode(char* _apssid, char* _appassword){
+void BWIFI::setAPMode(void){
     APMODE = true;
     WiFi.mode(WIFI_AP_STA);
-    WiFi.softAP(_apssid, _appassword);
+    WiFi.softAP(ap_ssid, ap_password);
     Serial.print(FPSTR(lb_AP));
     Serial.print(FPSTR(lb_MAC_ADDRESS));
     Serial.println(WiFi.softAPmacAddress());

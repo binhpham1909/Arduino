@@ -3,23 +3,24 @@
 
 #include <ESP8266WiFi.h>
 #include "BDef.h"
+#include "BData.h"
 
-
-class BWIFI{
-    public:
-        void config(boolean _debug);  
-        boolean connect(char* _ssid, char* _password);
+class BWIFI: public BData 
+{
+    public: 
+        void init(); 
+        uint32_t getServer(void);
+        uint8_t getRequestTimeout(void);
+        void connect(void);
         boolean checkConnected(void);
-        void reConnect(char* _ssid, char* _password);
+        void reConnect(void);
         uint8_t getConnectTimeOut(void);
         void setSTAMode(void);
-        void setAPMode(char* _apssid, char* _appassword);  
+        void setAPMode(void);  
     private:  
-        boolean DEBUG = false;
         boolean CONNECTED=false;
         boolean	APMODE=false;  
         uint32_t lastConnect = 0;
         uint32_t lastCheckUnConnect = 0;
-        uint8_t maxTimeOut = 30;    // second
 };
 #endif
