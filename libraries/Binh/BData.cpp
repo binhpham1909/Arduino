@@ -17,6 +17,8 @@ void BData::readData(void){
     DEBUG_HBI(FPSTR(lb_ADMIN_PASSWORD));    DEBUGln_HBI(dv_password);
     EEPROM.get(SERVER_IP_ADD,server_ip);
     DEBUG_HBI(FPSTR(lb_SERVER));    DEBUGln_HBI(server_ip);
+    EEPROM.get(SERVER_PORT_ADD,server_port);
+    DEBUG_HBI(FPSTR(lb_SERVER_PORT));    DEBUGln_HBI(server_port);
     used_DHT =(EEPROM.read(USED_DHT_ADD)==1)?true:false;
     DEBUG_HBI("Used DHT\t");    DEBUGln_HBI(used_DHT);
     DHT_type = EEPROM.read(DHT_TYPE_ADD);

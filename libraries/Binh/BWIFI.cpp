@@ -8,6 +8,9 @@ void BWIFI::init(){
 uint32_t BWIFI::getServer(void){
     return server_ip;
 };
+uint16_t BWIFI::getServerPort(void){
+    return server_port;
+};
 uint8_t BWIFI::getRequestTimeout(void){
     return wf_request_timeout;
 }

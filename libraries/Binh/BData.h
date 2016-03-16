@@ -16,6 +16,7 @@ class BData{
         uint8_t DHT_type;
         uint8_t DHT_pin;
         uint32_t server_ip;
+        uint16_t server_port;
         uint8_t wf_connect_timeout;
         uint8_t wf_request_timeout;
 };

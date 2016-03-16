@@ -10,6 +10,7 @@ class BWIFI: public BData
     public: 
         void init(); 
         uint32_t getServer(void);
+        uint16_t getServerPort(void);
         uint8_t getRequestTimeout(void);
         void connect(void);
         boolean checkConnected(void);

@@ -69,6 +69,7 @@ void getDecode(request *s, String http_rq);
 #define WF_STATIC_IP_ADD 203
 #define WF_CONNECT_TIMEOUT_ADD 207
 #define WF_REQUEST_TIMEOUT_ADD 208
+#define SERVER_PORT_ADD   209 // 16bit
 
 #define MAX_SSID_LEN     32
 #define MAX_PASSWORD_LEN 32	// Key to control 12           Bytes 32 to 43
