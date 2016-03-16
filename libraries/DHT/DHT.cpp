@@ -21,8 +21,8 @@ void DHT::init(uint8_t pin, uint8_t type, uint8_t count, boolean DEBUG) {
   // basd on the speed of the processor.
   pinMode(DHT_PIN, INPUT_PULLUP);
   DHT_LASTREAD_TIME = -MIN_INTERVAL;
-  if(DEBUG) Serial.println("Max clock cycles: "); 
-  if(DEBUG) Serial.println(DHT_MAX_CYCLES, DEC);
+  DEBUG_HBI("Max clock cycles: "); 
+  DEBUGln_HBI(DHT_MAX_CYCLES, DEC);
 }
 
 //boolean S == Scale.  True == Fahrenheit; False == Celcius
@@ -154,12 +154,12 @@ boolean DHT::read(bool force) {
     // First expect a low signal for ~80 microseconds followed by a high signal
     // for ~80 microseconds again.
     if (expectPulse(LOW) == 0) {
-      if(DEBUG) Serial.println(F("Timeout waiting for start signal low pulse."));
+      DEBUGln_HBI(F("Timeout waiting for start signal low pulse."));
       DHT_LAST_RESULT = false;
       return DHT_LAST_RESULT;
     }
     if (expectPulse(HIGH) == 0) {
-      if(DEBUG) Serial.println(F("Timeout waiting for start signal high pulse."));
+      DEBUGln_HBI(F("Timeout waiting for start signal high pulse."));
       DHT_LAST_RESULT = false;
       return DHT_LAST_RESULT;
     }
@@ -184,7 +184,7 @@ boolean DHT::read(bool force) {
     uint32_t lowCycles  = cycles[2*i];
     uint32_t highCycles = cycles[2*i+1];
     if ((lowCycles == 0) || (highCycles == 0)) {
-      if(DEBUG) Serial.println(F("Timeout waiting for pulse."));
+      DEBUGln_HBI(F("Timeout waiting for pulse."));
       DHT_LAST_RESULT = false;
       return DHT_LAST_RESULT;
     }
@@ -199,22 +199,20 @@ boolean DHT::read(bool force) {
     // stored data.
   }
   
-  if(DEBUG){
-     Serial.println(F("Received:"));
-     Serial.print(data[0], HEX);    Serial.print(F(", ")); 
-     Serial.print(data[1], HEX);    Serial.print(F(", "));
-     Serial.print(data[2], HEX);    Serial.print(F(", "));
-     Serial.print(data[3], HEX);    Serial.print(F(", "));
-     Serial.print(data[4], HEX);    Serial.print(F(" =? "));
-     Serial.println((data[0] + data[1] + data[2] + data[3]) & 0xFF, HEX);  
-  } 
+     DEBUGln_HBI(F("Received:"));
+     DEBUG_HBI(data[0], HEX);    DEBUG_HBI(F(", ")); 
+     DEBUG_HBI(data[1], HEX);    DEBUG_HBI(F(", "));
+     DEBUG_HBI(data[2], HEX);    DEBUG_HBI(F(", "));
+     DEBUG_HBI(data[3], HEX);    DEBUG_HBI(F(", "));
+     DEBUG_HBI(data[4], HEX);    DEBUG_HBI(F(" =? "));
+     DEBUGln_HBI((data[0] + data[1] + data[2] + data[3]) & 0xFF, HEX);  
   // Check we read 40 bits and that the checksum matches.
   if (data[4] == ((data[0] + data[1] + data[2] + data[3]) & 0xFF)) {
     DHT_LAST_RESULT = true;
     return DHT_LAST_RESULT;
   }
   else {
-    if(DEBUG)   Serial.println(F("Checksum failure!"));
+    if(DEBUG)   DEBUGln_HBI(F("Checksum failure!"));
     DHT_LAST_RESULT = false;
     return DHT_LAST_RESULT;
   }

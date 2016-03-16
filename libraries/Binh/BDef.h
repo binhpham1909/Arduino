@@ -52,6 +52,7 @@ void getDecode(request *s, String http_rq);
 
 #define MAX_EEPROM_SIZE 512
 #define LED_ALERT 0
+#define FIRST_SETUP 1
 #define WF_SSID_ADD 10
 #define WF_PASSWORD_ADD 32
 #define AP_SSID_ADD 64
@@ -69,7 +70,7 @@ void getDecode(request *s, String http_rq);
 #define WF_STATIC_IP_ADD 203
 #define WF_CONNECT_TIMEOUT_ADD 207
 #define WF_REQUEST_TIMEOUT_ADD 208
-#define SERVER_PORT_ADD   209 // 16bit
+#define SERVER_PORT_ADD   210 // 16bit
 
 #define MAX_SSID_LEN     32
 #define MAX_PASSWORD_LEN 32	// Key to control 12           Bytes 32 to 43

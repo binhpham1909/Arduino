@@ -53,12 +53,14 @@ void BWIFI::setAPMode(void){
     APMODE = true;
     WiFi.mode(WIFI_AP_STA);
     WiFi.softAP(ap_ssid, ap_password);
-    Serial.print(FPSTR(lb_AP));
-    Serial.print(FPSTR(lb_MAC_ADDRESS));
-    Serial.println(WiFi.softAPmacAddress());
-    Serial.print(FPSTR(lb_AP));
-    Serial.print(FPSTR(lb_IP));
-    Serial.println(WiFi.softAPIP());    
+    DEBUG_HBI(FPSTR(lb_AP));
+    DEBUG_HBI(FPSTR(lb_MAC_ADDRESS));
+    DEBUGln_HBI(WiFi.softAPmacAddress());
+    DEBUG_HBI(FPSTR(lb_AP));
+    DEBUG_HBI(FPSTR(lb_IP));
+    DEBUGln_HBI(WiFi.softAPIP()); 
+    DEBUG_HBI(ap_ssid);  
+    DEBUG_HBI(ap_password); 
 }
 
 

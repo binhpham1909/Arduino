@@ -5,6 +5,7 @@
 class BData{
     public:
         void readData(void);
+        void restoreDefaults(void);
     protected:
         char wf_ssid[MAX_SSID_LEN];
         char wf_password[MAX_PASSWORD_LEN];

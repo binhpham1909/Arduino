@@ -6,27 +6,30 @@
 #include "BWIFI.h"  // used: BWifi.func
 #include "BUTILS.h" // used: Butils.func
 #include "BClient.h"  // used: BClient def new client
+#include "BJSON.h"  // used: BWifi.func
 
 #define ALERT_LED 14
 #define DHTPIN 0
 #define DHTTYPE DHT22
 
-
+BJSON json;
 BClient client;
 BWIFI wifi;
 WiFiServer server(80);
 //ESPHB esp(ALERT_LED);
 DHT dht;
 
-String toSend ="";
+
 String respone ="";
 boolean isSendSuccess = false;
 boolean isWifiConnected = false;
 boolean isalert=false;
 
 float humidity, temp_c;
+uint32_t last_blink = millis();
 
 void setup() {
+  pinMode(ALERT_LED, OUTPUT);
   Serial.begin(115200); // Open serial communications and wait for port to open:
   dht.init(DHTPIN,DHTTYPE,11,true);
   wifi.init();
@@ -41,23 +44,31 @@ void setup() {
 }
 
 void loop() {
+  String toSend ="";
   if((dht.readHumidity())&&(dht.readTemperature())){
     humidity= dht.readHumidity();
     temp_c  = dht.readTemperature();    
   }
-  toSend = String(humidity,2) + "\t" + String(temp_c,2);
+  json.JsonEncode(&toSend,BJSONFIRST,"serial","THS0000006");
+  json.JsonEncode(&toSend,BJSONNEXT,"humi",String(humidity,2));
+  json.JsonEncode(&toSend,BJSONLAST,"temp",String(temp_c,2));
   Serial.println(toSend);
   
-    wifi.reConnect();
     isWifiConnected = wifi.checkConnected();
     if(isWifiConnected){
       client.sendRequest(wifi.getServer(),wifi.getServerPort(), &toSend, wifi.getRequestTimeout());
       isSendSuccess = client.checkRespone();
       if(isSendSuccess){
         respone = client.getRespone();
+        if(respone.indexOf(">ON")>0)
+          isalert = true;
+        else
+          isalert = false;
       }    
+    }else{
+      wifi.reConnect();
     }
-
+    if(isalert) digitalWrite(ALERT_LED, isalert);
     WiFiClient client2 = server.available(); // Check if a client has connected
     if (!client2) {
       return; // return at here is code bellow not run and re loop() when if condition true
@@ -77,7 +88,6 @@ void loop() {
     client2.print(respone); 
     client2.stop();
     req="";
-}
-
+};
 
 

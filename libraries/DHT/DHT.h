@@ -16,16 +16,18 @@ written by Adafruit Industries
 // Uncomment to enable printing out nice debug messages.
 //#define DHT_DEBUG
 
-// Define where debug output will be printed.
-#define DEBUG_PRINTER Serial
+#ifdef DEBUG_ESP_HBI
+#ifdef DEBUG_ESP_PORT
+#define DEBUG_HBI(...) DEBUG_ESP_PORT.print( __VA_ARGS__ )
+#define DEBUGln_HBI(...) DEBUG_ESP_PORT.println( __VA_ARGS__ )
 
-// Setup debug printing macros.
-#ifdef DHT_DEBUG
-  #define DEBUG_PRINT(...) { DEBUG_PRINTER.print(__VA_ARGS__); }
-  #define DEBUG_PRINTLN(...) { DEBUG_PRINTER.println(__VA_ARGS__); }
-#else
-  #define DEBUG_PRINT(...) {}
-  #define DEBUG_PRINTLN(...) {}
+
+#endif
+#endif
+
+#ifndef DEBUG_HBI
+#define DEBUG_HBI(...)
+#define DEBUGln_HBI(...)
 #endif
 
 // Define types of sensors.
