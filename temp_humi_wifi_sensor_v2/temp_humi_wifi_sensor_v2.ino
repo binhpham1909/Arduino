@@ -49,17 +49,17 @@ void loop() {
     humidity= dht.readHumidity();
     temp_c  = dht.readTemperature();    
   }
-  json.JsonEncode(&toSend,BJSONFIRST,"serial","THS0000006");
+  json.JsonEncode(&toSend,BJSONFIRST,"serial","THS0000005");
   json.JsonEncode(&toSend,BJSONNEXT,"humi",String(humidity,2));
   json.JsonEncode(&toSend,BJSONLAST,"temp",String(temp_c,2));
-  Serial.println(toSend);
-  
     isWifiConnected = wifi.checkConnected();
     if(isWifiConnected){
       client.sendRequest(wifi.getServer(),wifi.getServerPort(), &toSend, wifi.getRequestTimeout());
       isSendSuccess = client.checkRespone();
       if(isSendSuccess){
-        respone = client.getRespone();
+        Serial.println(toSend);
+        client.getRespone(respone);
+        Serial.println(respone);
         if(respone.indexOf(">ON")>0)
           isalert = true;
         else

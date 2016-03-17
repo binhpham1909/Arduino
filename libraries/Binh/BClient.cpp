@@ -29,16 +29,14 @@ boolean BClient::checkRespone(void){
         return true;
 }
 
-String BClient::getRespone(void){
+void BClient::getRespone(String &_respone){
     if(!sendSuccess){
+        _respone = "";
         while (client.available()) { 
-            respone = client.readString();
+            _respone = client.readString();
         }
         client.stop();
-        DEBUG_HBI(respone);
-        sendSuccess = true; 
-        return respone;           
-    }else{
-        return "";
-    }  
+        DEBUG_HBI(_respone);
+        sendSuccess = true;          
+    }
 }

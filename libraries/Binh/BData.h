@@ -2,6 +2,7 @@
 #define BData_h
 #include "BDef.h"
 #include <EEPROM.h>  // used: EEPROM.func
+#include <IPAddress.h>  // used: EEPROM.func
 class BData{
     public:
         void readData(void);

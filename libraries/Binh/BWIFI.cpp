@@ -27,12 +27,12 @@ boolean BWIFI::checkConnected(void){
 	if(WiFi.status() != WL_CONNECTED){
         DEBUG_HBI(FPSTR(lb_DOT));
         if(getConnectTimeOut()>wf_connect_timeout){
-            DEBUGln_HBI(FPSTR(lb_FAILED_CONNECT));
+            DEBUGln_HBI(F("-"));
         }
 		CONNECTED=false;
 	}else{
         CONNECTED=true;
-        DEBUGln_HBI(FPSTR(lb_CONNECTED));
+        DEBUG_HBI(F("+"));
     }
     return CONNECTED;
 }

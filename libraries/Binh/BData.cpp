@@ -36,7 +36,7 @@ void BData::readData(void){
 void BData::restoreDefaults(void){
     DEBUGln_HBI(F("Open EEPROM"));
     EEPROM.begin(MAX_EEPROM_SIZE);
-    if(EEPROM.read(FIRST_SETUP)!=1){
+    if(EEPROM.read(FIRST_SETUP)!=9){
         DEBUGln_HBI(F("Restore."));
         String _df_ssid = "TempHumiSensor";
         String _ssid = "Tang_2_nha_moi";
@@ -49,7 +49,7 @@ void BData::restoreDefaults(void){
         _arr_ip[1] = 0;
         _arr_ip[2] = 0;
         _arr_ip[3] = 79;
-        int _port = 89;
+        int _port = 8989;
         
         _ssid.toCharArray(_arr_32,_ssid.length()+1);
         EEPROM.put(WF_SSID_ADD,_arr_32);
@@ -68,7 +68,7 @@ void BData::restoreDefaults(void){
         EEPROM.write(DHT_PIN_ADD,0);
         EEPROM.write(WF_CONNECT_TIMEOUT_ADD,30);
         EEPROM.write(WF_REQUEST_TIMEOUT_ADD,30);
-        EEPROM.write(FIRST_SETUP,1);
+        EEPROM.write(FIRST_SETUP,9);
     }
     EEPROM.end();
     DEBUGln_HBI(F("Close EEPROM"));
