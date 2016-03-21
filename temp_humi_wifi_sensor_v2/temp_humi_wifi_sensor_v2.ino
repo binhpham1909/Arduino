@@ -7,6 +7,7 @@
 #include "BUTILS.h" // used: Butils.func
 #include "BClient.h"  // used: BClient def new client
 #include "BJSON.h"  // used: BWifi.func
+//#include "BWorks.h"  // used: BWifi.func
 
 #define ALERT_LED 14
 #define DHTPIN 0
@@ -18,7 +19,7 @@ BWIFI wifi;
 WiFiServer server(80);
 //ESPHB esp(ALERT_LED);
 DHT dht;
-
+BWorks works;
 
 String respone ="";
 boolean isSendSuccess = false;
@@ -43,16 +44,16 @@ void setup() {
   DEBUGln_HBI(F("Server started"));
 }
 
+
 void loop() {
+  readDHT();
+  
   String toSend ="";
-  if((dht.readHumidity())&&(dht.readTemperature())){
-    humidity= dht.readHumidity();
-    temp_c  = dht.readTemperature();    
-  }
   json.JsonEncode(&toSend,BJSONFIRST,"serial","THS0000005");
   json.JsonEncode(&toSend,BJSONNEXT,"humi",String(humidity,2));
   json.JsonEncode(&toSend,BJSONLAST,"temp",String(temp_c,2));
-    isWifiConnected = wifi.checkConnected();
+  
+  isWifiConnected = wifi.checkConnected();
     if(isWifiConnected){
       client.sendRequest(wifi.getServer(),wifi.getServerPort(), &toSend, wifi.getRequestTimeout());
       isSendSuccess = client.checkRespone();
@@ -89,5 +90,11 @@ void loop() {
     client2.stop();
     req="";
 };
+void readDHT(){
+  if((dht.readHumidity())&&(dht.readTemperature())){
+    humidity= dht.readHumidity();
+    temp_c  = dht.readTemperature();    
+  }
+}
 
 
