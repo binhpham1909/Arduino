@@ -42,7 +42,7 @@ const char lb_menu0[] PROGMEM="Plant Pum Control";
 const char lb_menu1[] PROGMEM="Set moisture 0%";
 const char lb_menu2[] PROGMEM="Set moisture 100%";
 const char lb_menu3[] PROGMEM="Set moisture";
-const char* const lb_menu[] PROGMEM ={lb_menu0, lb_menu1, lb_menu2, lb_menu2, lb_menu2};
+const char* const lb_menu[] PROGMEM ={lb_menu0, lb_menu1, lb_menu2, lb_menu2, lb_menu3};
 #define STEP_SET 0.1
 
 byte buttons[] = {MENU_BUTTON, UP_BUTTON, DOWN_BUTTON, SAVE_BUTTON};
