@@ -3,7 +3,8 @@
 #include <LCD5110_Basic.h>
 #include <OneWire.h>
 #include <avr/pgmspace.h>
-
+#include <ClickEncoder.h>
+#include <TimerOne.h>
 // PIN connector
 // LCD function define - pin 10 11 12 14(A0) 15(A1)
 //      SCK  - Pin 8  17
@@ -43,7 +44,10 @@ const char lb_menu0[] PROGMEM="Plant Pum Control";
 const char lb_menu1[] PROGMEM="Set moisture 0%";
 const char lb_menu2[] PROGMEM="Set moisture 100%";
 const char lb_menu3[] PROGMEM="Set moisture";
-const char* const lb_menu[] PROGMEM ={lb_menu0, lb_menu1, lb_menu2, lb_menu2, lb_menu3};
+const char lb_menu4[] PROGMEM="Set clock";
+const char lb_menu5[] PROGMEM="Set Timer";
+const char lb_menu6[] PROGMEM="OFF Time";
+const char* const lb_menu[] PROGMEM ={lb_menu0, lb_menu1, lb_menu2, lb_menu2, lb_menu2};
 #define STEP_SET 0.1
 
 byte buttons[] = {MENU_BUTTON, UP_BUTTON, DOWN_BUTTON, SAVE_BUTTON};
