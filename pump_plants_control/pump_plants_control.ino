@@ -3,10 +3,9 @@
 #include <LCD5110_Basic.h>
 #include <OneWire.h>
 #include <avr/pgmspace.h>
-#include "DHT.h"
 
 // PIN connector
-// LCD function define
+// LCD function define - pin 10 11 12 14(A0) 15(A1)
 //      SCK  - Pin 8  17
 //      MOSI - Pin 9  16
 //      DC   - Pin 10 15
@@ -19,17 +18,19 @@
 #define LCD_CS 14
 
 // Relay pin
-#define SSR_PIN 9
+#define PUMP_PIN 8
+#define LIGHT_PIN 9
 
 // Sensor pin
-#define MOISTURE_PIN A0
+#define MOISTURE_PIN A2
 
 // Button pin
-#define MENU_BUTTON 5
-#define UP_BUTTON 6
-#define DOWN_BUTTON 7
-#define SAVE_BUTTON 8
+#define AUTO_BTN 5
 
+// Rotaty Encoder PIN
+#define A_PIN 
+#define B_PIN 
+#define BTN_PIN 
 // BUTTON menu
 // define
 #define MAX_MENU  2
