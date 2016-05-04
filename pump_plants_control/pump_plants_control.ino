@@ -28,8 +28,8 @@
 #define AUTO_BTN 15 //A1
 
 // Rotaty Encoder PIN
-#define A_PIN 8
-#define B_PIN 9
+#define A_PIN 9
+#define B_PIN 8
 #define BTN_PIN 7
 // RTC PIN
 #define RTC_CE 3
@@ -63,7 +63,9 @@ byte maxSubItem[MAX_SUBMENU];
 LCD5110 LCD(LCD_SCK,LCD_MOSI,LCD_DC,LCD_RST,LCD_CS);
 extern uint8_t HBIlogo[];
 extern uint8_t SmallFont[];
-String rowLCD[4];
+//extern uint8_t Arial10In[];
+//extern uint8_t Arial10[];
+char row[6][14];
 // EEPROM
 #define _CONFIGS_ 0    
 struct configs{
@@ -77,7 +79,7 @@ int16_t lastEn, valueEn;
 
 // Create a DS1302 object.
 DS1302 rtc(RTC_CE,RTC_IO,RTC_SCK);
-Time t_now(2013, 9, 22, 1, 38, 50, Time::kSunday);
+Time t_now(2016, 5, 4, 10, 00, 50, Time::kSunday);
 
 // New value to save
 byte nMode;
@@ -94,23 +96,26 @@ void loop(void) {
   t_now = rtc.time();
   processEncoder();
   processEncoderBtn();
+  updateLCD();
   displayLCD();
-  controlPump();
+  delay(300);
+//  controlPump();
   //EEPROM.put( _CONFIGS_, cfg );
 }
 
 // Sub program
 void initLCD(){
     LCD.InitLCD();
+    LCD.setContrast(70);
     LCD.drawBitmap(0, 0, HBIlogo, 84, 48); delay(2000);
     LCD.invert(true); delay(500); LCD.invert(false);  delay(500);
     LCD.setFont(SmallFont);
-    LCD.print("HBInvent.vn" , LEFT, 30);    delay(500);
     LCD.clrScr();
+    LCD.print("HBInvent.vn" , LEFT, 30);    delay(500);
 };
 void initECRotaty(){
-    encoder = new ClickEncoder(A_PIN,B_PIN,BTN_PIN);
-    encoder->setAccelerationEnabled(true);
+    encoder = new ClickEncoder(A_PIN,B_PIN,BTN_PIN,4);
+    encoder->setAccelerationEnabled(false);
     Timer1.initialize(1000);
     Timer1.attachInterrupt(timerIsr);
     lastEn = -1;    
@@ -120,6 +125,7 @@ void initGPIO(){
     pinMode(PUMP_PIN, OUTPUT); digitalWrite(PUMP_PIN, HIGH);    
 };
 /// Menu with encoder rotaty - MVC
+/*
 int readADC(){
     return analogRead(MOISTURE_PIN);
 };
@@ -134,6 +140,7 @@ void controlPump(){
 float calMoisture(int adcVal){
   return (float)(adcVal*(cfg.adc100-cfg.adc0)+100*cfg.adc0);
 };
+*/
 void setTime(Time& t){
   rtc.writeProtect(false);
   rtc.halt(false);
@@ -171,53 +178,45 @@ void saveItem(){
 };
 // View
 void displayLCD(){
+      LCD.clrScr();
+      if(posSubItem==0){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[0], LEFT, 0);
+      if(posSubItem==1){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[1], LEFT, 8);
+      if(posSubItem==2){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[2], LEFT, 16);
+      if(posSubItem==3){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[3], LEFT, 24);
+      if(posSubItem==4){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[4], LEFT, 32);
+      if(posSubItem==5){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[5], LEFT, 40);
+};
+void updateLCD(){    
     if(!inSetup){
-        LCD.clrScr();
-        LCD.setFont(SmallFont); // font 6x8
-        LCD.print("Moisture: " + String("Value") , LEFT, 0);
-        LCD.print("Last ON: " + String("Value") , LEFT, 0);
-        LCD.print("Last ON time: " + String("Value") , LEFT, 0);
-        LCD.print("Moisture: " + String("Value") , LEFT, 0);
-        LCD.print("Moisture: " + String("Value") , LEFT, 0);
+//        LCD.setFont(SmallFont); // font 6x8
+        String str;
+        strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
+        str = String(t_now.date) + "-" + String(t_now.mon) + "-" + String(t_now.yr);
+        str.toCharArray(row[1],13);
+        str = String(t_now.hr) + ":" + String(t_now.min) + ":" + String(t_now.sec);
+        str.toCharArray(row[2],13);
+        str = "ADC "+String(analogRead(A3));
+        str.toCharArray(row[3],13);
+        strcpy(row[4], "line5");
+        strcpy(row[5], "line6");
     }else{
-        LCD.clrScr();
-        char buff[14];
-        switch(posMenuCurent){
-            case 100:
+        switch(posSubMenu){
+            case 1:
                 nMode = cfg.Mode;
-                strcpy_P(row1, (char*)pgm_read_word(&(lb_menu[posSubMenu])));
-                rowLCD[0] = str(buff);
-                rowLCD[1] = "";
-                rowLCD[2] = getModeLabel(nMode);
-                rowLCD[3] = "";
+                strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
+                strcpy(row[1], "line2");
+                strcpy(row[2], "line3");
+                strcpy(row[3], "line4");
+                strcpy(row[4], "line5");
+                strcpy(row[5], "line6");
             break;
-            case 101:  break;  // mode run
-            case 200:  break;
-            case 201:  break;  // mode run
-            case 202:  break;
-            case 300:  break;
-            case 301:  break;  // mode run
-            case 302:  break;
-            case 400:  break;
-            case 401:  break;  // mode run
-            case 402:  break;
-            case 403:  break;
-            case 500:  break;
-            case 501:  break;  // mode run
-            case 502:  break;
-            case 503:  break;
-            case 600:  break;
-            case 601:  break;  // mode run
-            case 602:  break;
+            case 2:  break;
+            case 3:  break;
+            case 4:  break;  // mode run
+            case 5:  break;
+            case 6:  break;
+            default: break;
         };
-        for(char i=0; i<maxSubItem[posSubMenu]; i++){
-            if(posSubItem==i){
-                LCD.setFont(Arial10In);
-            }else{
-                LCD.setFont(Arial10);
-            }
-            LCD.print(rowLCD[i], LEFT, i*10+1);
-        }
     }
 };
 String getModeLabel(byte modes){
@@ -236,14 +235,14 @@ void createMenuList(){
     maxSubItem[6] = 3;  // Calibration: adc0, adc100
 //    maxSubItem[7] = 11;  // Program: adc0, adc100
 };
-void processEncoder(){
+boolean processEncoder(){
     valueEn += encoder->getValue();
     if (valueEn == lastEn) {
-        return;
+        return 0;
         };
     if (!inSetup) {
         lastEn = valueEn;
-        return;
+        return 0;
     };
     int posDelta = valueEn - lastEn;
     lastEn = valueEn;
@@ -275,6 +274,7 @@ void processEncoder(){
             case 602:  break;
         };
     };
+    return 1;
 };
 void processEncoderBtn(){
   ClickEncoder::Button b = encoder->getButton();
@@ -289,18 +289,7 @@ void processEncoderBtn(){
   }
 };
 // Hold button in/out to Setup menu
-void handlerHeld(){
-    if(inSetup){
-        inSetup = false;
-        posSubMenu = 0;
-    }else{
-        inSetup = true;
-        posSubMenu = 1;
-    }
-    inSubMenu = false;
-    inSubItem = false;
-    inChange = false;
-};
+void handlerHeld(){};
 void handlerClicked(){
     if(!inSetup) {
         inSubMenu = false;
@@ -334,7 +323,18 @@ void handlerClicked(){
 };
 void handlerPressed(){};
 void handlerReleased(){};
-void handlerDoubleClicked(){};
+void handlerDoubleClicked(){
+    if(inSetup){
+        inSetup = false;
+        posSubMenu = 0;
+    }else{
+        inSetup = true;
+        posSubMenu = 1;
+    }
+    inSubMenu = false;
+    inSubItem = false;
+    inChange = false;
+};
 void updatePosMenu(){
     posMenuCurent = posSubMenu*100 + posSubItem;
 }
