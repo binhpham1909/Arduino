@@ -37,22 +37,23 @@
 #define RTC_SCK 2
 
 // Text display menu
-const char lb_menu0[] PROGMEM="Plant Pum Control";
-const char lb_menu1[] PROGMEM="Set moisture 0%";
-const char lb_menu2[] PROGMEM="Set moisture 100%";
-const char lb_menu3[] PROGMEM="Set moisture";
-const char lb_menu4[] PROGMEM="Set clock";
-const char lb_menu5[] PROGMEM="Set Timer";
-const char lb_menu6[] PROGMEM="OFF Time";
-const char* const lb_menu[] PROGMEM ={lb_menu0, lb_menu1, lb_menu2, lb_menu3, lb_menu4, lb_menu5, lb_menu6};
+const char lb_menu0[] PROGMEM="Pum Control";
+const char lb_menu1[] PROGMEM="Mode run";
+const char lb_menu2[] PROGMEM="Set Moisture";
+const char lb_menu3[] PROGMEM="Timer";
+const char lb_menu4[] PROGMEM="Time Enable";
+const char lb_menu5[] PROGMEM="Time Disable";
+const char lb_menu6[] PROGMEM="Clock time";
+const char lb_menu7[] PROGMEM="Clock date";
+const char lb_menu8[] PROGMEM="Calibration";
+const char* const lb_menu[] PROGMEM ={lb_menu0, lb_menu1, lb_menu2, lb_menu3, lb_menu4, lb_menu5, lb_menu6, lb_menu7, lb_menu8};
 char  NowMenu=0;
 // define
-#define MAX_SUBMENU  7
+#define MAX_SUBMENU  9
 // Menu state
 boolean inSetup = false;
 boolean inSubMenu = false;
 boolean inSubItem = false;
-boolean inChange = false;
 // Menu position
 byte posSubMenu = 0;
 byte posSubItem = 0;
@@ -70,9 +71,17 @@ char row[6][14];
 #define _CONFIGS_ 0    
 struct configs{
   byte Mode;
-  
-} cfg;
-
+  int adc0;
+  int adc100;
+  float moisSet;
+  float moisOffset;
+  int timerOn;
+  int timerOff;
+  byte HHEnable;
+  byte MMEnable;
+  byte HHDisable;
+  byte MMDisable;
+} cfg, ncfg;
 // Encoder
 ClickEncoder *encoder;
 int16_t lastEn, valueEn;
@@ -80,12 +89,15 @@ int16_t lastEn, valueEn;
 // Create a DS1302 object.
 DS1302 rtc(RTC_CE,RTC_IO,RTC_SCK);
 Time t_now(2016, 5, 4, 10, 00, 50, Time::kSunday);
+Time nTime(2016, 5, 4, 10, 00, 50, Time::kSunday);
 
-// New value to save
-byte nMode;
-
+// pump
+boolean pumpNow = false;
 void setup(void) {
     Serial.begin(115200);
+    // 2 line enable at first setup
+    //cfg = {0, 1023, 0, 40, 5, 5, 120, 14, 0, 11, 0};
+    //EEPROM.put( _CONFIGS_, cfg );
     EEPROM.get( _CONFIGS_, cfg );
     initGPIO();
     initLCD();
@@ -106,7 +118,7 @@ void loop(void) {
 // Sub program
 void initLCD(){
     LCD.InitLCD();
-    LCD.setContrast(70);
+    LCD.setContrast(90);
     LCD.drawBitmap(0, 0, HBIlogo, 84, 48); delay(2000);
     LCD.invert(true); delay(500); LCD.invert(false);  delay(500);
     LCD.setFont(SmallFont);
@@ -115,7 +127,7 @@ void initLCD(){
 };
 void initECRotaty(){
     encoder = new ClickEncoder(A_PIN,B_PIN,BTN_PIN,4);
-    encoder->setAccelerationEnabled(false);
+    encoder->setAccelerationEnabled(true);
     Timer1.initialize(1000);
     Timer1.attachInterrupt(timerIsr);
     lastEn = -1;    
@@ -125,55 +137,78 @@ void initGPIO(){
     pinMode(PUMP_PIN, OUTPUT); digitalWrite(PUMP_PIN, HIGH);    
 };
 /// Menu with encoder rotaty - MVC
-/*
 int readADC(){
     return analogRead(MOISTURE_PIN);
 };
 float readMoisture(){
-    return (float)(analogRead(MOISTURE_PIN)*(cfg.adc100-cfg.adc0)+100*cfg.adc0);
+    return (float)(100*(analogRead(MOISTURE_PIN)-cfg.adc0)/(cfg.adc100-cfg.adc0));
 };
 // Control
 void controlPump(){
-  
+    float nowMois = readMoisture();
+    boolean pumpNowAuto, pumpNowMan, pumpNowTimer, pumpAllow;
+    if((cfg.Mode == 0)   ){
+        pumpNowMan = true;
+    }else{
+        pumpNowMan = false;
+    };
+    if((cfg.Mode == 1)&&(nowMois<=cfg.moisSet - cfg.moisOffset)&&!(nowMois>=cfg.moisSet + cfg.moisOffset)){
+        pumpNowAuto = true;
+    }else{
+        pumpNowAuto = false;
+    };
+    if((cfg.Mode == 2)   ){
+        pumpNowTimer = true;
+    }else{
+        pumpNowTimer = false;
+    };
+    if(((t_now.hr<=cfg.HHEnable)&&(t_now.min<=cfg.MMEnable))||((t_now.hr>=cfg.HHDisable)&&(t_now.min>=cfg.MMDisable))){
+        pumpAllow = true;
+    }else{
+        pumpAllow = false;
+    };
+    pumpNow = !((pumpNow||pumpNowAuto||pumpNowMan)&&pumpAllow);
+    digitalWrite(13, pumpNow);
 };
 
 float calMoisture(int adcVal){
   return (float)(adcVal*(cfg.adc100-cfg.adc0)+100*cfg.adc0);
 };
-*/
-void setTime(Time& t){
+
+void setTime(Time& t){  //Sunday, September 22, 2013 at 01:38:50. Time t(2013, 9, 22, 1, 38, 50, Time::kSunday);
   rtc.writeProtect(false);
   rtc.halt(false);
-  // Make a new time object to set the date and time.
-  // Sunday, September 22, 2013 at 01:38:50.
-  //Time t(2013, 9, 22, 1, 38, 50, Time::kSunday);
-  // Set the time and date on the chip.
   rtc.time(t);
 };
 void timerIsr() {
   encoder->service();
 };
 void saveItem(){
-    switch(posMenuCurent){
-        case 100:  break;
-        case 101:  break;  // mode run
-        case 200:  break;
-        case 201:  break;  // mode run
-        case 202:  break;
-        case 300:  break;
-        case 301:  break;  // mode run
-        case 302:  break;
-        case 400:  break;
-        case 401:  break;  // mode run
-        case 402:  break;
-        case 403:  break;
-        case 500:  break;
-        case 501:  break;  // mode run
-        case 502:  break;
-        case 503:  break;
-        case 600:  break;
-        case 601:  break;  // mode run
-        case 602:  break;
+    switch(posSubMenu){
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 8:
+                {
+                    EEPROM.put( _CONFIGS_, ncfg );
+                    EEPROM.get( _CONFIGS_, cfg );   
+                    break;             
+                }
+            case 6:
+                nTime.date = t_now.date;
+                nTime.mon = t_now.mon;
+                nTime.yr = t_now.yr;
+                setTime(nTime);
+            break;  // mode run
+            case 7:  
+                nTime.hr = t_now.hr;
+                nTime.min = t_now.min;
+                nTime.sec = t_now.sec;            
+                setTime(nTime);
+            break;
+            default: break;
     };
 };
 // View
@@ -186,35 +221,107 @@ void displayLCD(){
       if(posSubItem==4){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[4], LEFT, 32);
       if(posSubItem==5){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[5], LEFT, 40);
 };
-void updateLCD(){    
+void updateLCD(){
+    String str;   
     if(!inSetup){
 //        LCD.setFont(SmallFont); // font 6x8
-        String str;
         strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
         str = String(t_now.date) + "-" + String(t_now.mon) + "-" + String(t_now.yr);
         str.toCharArray(row[1],13);
         str = String(t_now.hr) + ":" + String(t_now.min) + ":" + String(t_now.sec);
         str.toCharArray(row[2],13);
-        str = "ADC "+String(analogRead(A3));
+        str = "M%: "+String(readMoisture());
         str.toCharArray(row[3],13);
-        strcpy(row[4], "line5");
-        strcpy(row[5], "line6");
+        if(pumpNow){
+            strcpy(row[4], "PUMP: ON");
+        }
+        else{
+            strcpy(row[4], "PUMP: OFF");
+        }
+        strcpy(row[5], "");
     }else{
         switch(posSubMenu){
             case 1:
-                nMode = cfg.Mode;
                 strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
-                strcpy(row[1], "line2");
-                strcpy(row[2], "line3");
-                strcpy(row[3], "line4");
-                strcpy(row[4], "line5");
-                strcpy(row[5], "line6");
+                strcpy(row[2], "");
+                str = getModeLabel(ncfg.Mode);
+                str.toCharArray(row[1],13);
+                strcpy(row[3], "");
+                strcpy(row[4], "");
+                strcpy(row[5], "");
             break;
-            case 2:  break;
-            case 3:  break;
-            case 4:  break;  // mode run
-            case 5:  break;
-            case 6:  break;
+            case 2:  
+                strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
+                str = "Do am: "+ String(ncfg.moisSet);
+                str.toCharArray(row[1],13);
+                str = "Offset: "+ String(ncfg.moisOffset);
+                str.toCharArray(row[2],13);
+                strcpy(row[3], "");
+                strcpy(row[4], "");
+                strcpy(row[5], "");            
+            break;
+            case 3:
+                strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
+                str = "ON : "+ String(ncfg.timerOn);
+                str.toCharArray(row[1],13);
+                str = "OFF: "+ String(ncfg.timerOff);
+                str.toCharArray(row[2],13);
+                strcpy(row[3], "");
+                strcpy(row[4], "");
+                strcpy(row[5], "");             
+            break;
+            case 4:
+                strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
+                str = "HH: "+ String(ncfg.HHEnable);
+                str.toCharArray(row[1],13);
+                str = "MM: "+ String(ncfg.MMEnable);
+                str.toCharArray(row[2],13);
+                strcpy(row[3], "");
+                strcpy(row[4], ""); 
+                strcpy(row[5], "");            
+            break;  // mode run
+            case 5:
+                strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
+                str = "HH: "+ String(ncfg.HHDisable);
+                str.toCharArray(row[1],13);
+                str = "MM: "+ String(ncfg.MMDisable);
+                str.toCharArray(row[2],13);
+                strcpy(row[3], "");
+                strcpy(row[4], ""); 
+                strcpy(row[5], "");            
+            break;  // mode run
+            case 6:
+                strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
+                str = "HH: "+ String(nTime.hr);
+                str.toCharArray(row[1],13);
+                str = "MM: "+ String(nTime.min);
+                str.toCharArray(row[2],13);
+                str = "SS: "+ String(nTime.sec);
+                str.toCharArray(row[3],13);
+                strcpy(row[4], ""); 
+                strcpy(row[5], "");            
+            break;
+            case 7:
+                strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
+                str = "dd  : "+ String(nTime.date);
+                str.toCharArray(row[1],13);
+                str = "mm  : "+ String(nTime.mon);
+                str.toCharArray(row[2],13);
+                str = "yyyy: "+ String(nTime.yr);
+                str.toCharArray(row[3],13);
+                strcpy(row[4], ""); 
+                strcpy(row[5], "");            
+            break;
+            case 8:
+                strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
+                str = "0%  : "+ String(ncfg.adc0);
+                str.toCharArray(row[1],13);
+                str = "100%: "+ String(ncfg.adc100);
+                str.toCharArray(row[2],13);
+                strcpy(row[3], "");
+                strcpy(row[4], ""); 
+                strcpy(row[5], "");            
+            break;
             default: break;
         };
     }
@@ -223,16 +330,19 @@ String getModeLabel(byte modes){
     if(modes==0)    return "Manual";
     else if(modes==1)    return "Auto";
     else if(modes==2)    return "Timer";
+    else return "None";
 };
 // Model
 void createMenuList(){
-    maxSubItem[0] = 2;  // Set mode run
-    maxSubItem[1] = 3;  // Set moisture: moisture, offset
-    maxSubItem[2] = 3;  // Set timer: time on, time off
-    maxSubItem[3] = 4;  // Set time enable: hh, mm, ss
-    maxSubItem[4] = 4;  // Set time disable: hh, mm, ss
-    maxSubItem[5] = 4;  // Set RTC clock: hh, mm, ss
-    maxSubItem[6] = 3;  // Calibration: adc0, adc100
+    maxSubItem[0] = 1;  // 
+    maxSubItem[1] = 2;  // Set mode run
+    maxSubItem[2] = 3;  // Set moisture: moisture, offset
+    maxSubItem[3] = 3;  // Set timer: time on, time off
+    maxSubItem[4] = 3;  // Set time enable: hh, mm
+    maxSubItem[5] = 3;  // Set time disable: hh, mm
+    maxSubItem[6] = 4;  // Set RTC clock: hh, mm, ss
+    maxSubItem[7] = 4;  // Set RTC clock: dd, mm, yy
+    maxSubItem[8] = 3;  // Calibration: adc0, adc100
 //    maxSubItem[7] = 11;  // Program: adc0, adc100
 };
 boolean processEncoder(){
@@ -248,30 +358,63 @@ boolean processEncoder(){
     lastEn = valueEn;
     if(!inSubMenu){
         posSubMenu = (int)(posSubMenu + posDelta)%MAX_SUBMENU;
+        if(!posSubMenu) posSubMenu=1;
     }else if(inSubMenu&&!inSubItem){
         posSubItem = (int)(posSubItem + posDelta)%maxSubItem[posSubMenu];
-    }else if(inSubMenu&&inSubItem&&inChange){
+    }else if(inSubMenu&&inSubItem){
 // user insert function for subItem change at here
         switch(posMenuCurent){
-            case 100:  break;
-            case 101:  break;  // mode run
-            case 200:  break;
-            case 201:  break;  // mode run
-            case 202:  break;
-            case 300:  break;
-            case 301:  break;  // mode run
-            case 302:  break;
-            case 400:  break;
-            case 401:  break;  // mode run
-            case 402:  break;
-            case 403:  break;
-            case 500:  break;
-            case 501:  break;  // mode run
-            case 502:  break;
-            case 503:  break;
-            case 600:  break;
-            case 601:  break;  // mode run
-            case 602:  break;
+            case 101:
+                ncfg.Mode = (byte)(ncfg.Mode + posDelta) % 3; // 3mode MANUAL, AUTO, TIMER
+            break;  // mode run
+            case 201:
+                ncfg.moisSet = (float)(ncfg.moisSet + posDelta*0.1);
+            break;  // mode run
+            case 202:
+                ncfg.moisOffset = (float)(ncfg.moisOffset + posDelta*0.1);
+            break;
+            case 301:
+                ncfg.timerOn = (int)(ncfg.timerOn + posDelta);
+            break;  // mode run
+            case 302:
+                ncfg.timerOff = (int)(ncfg.timerOff + posDelta);
+            break;
+            case 401:
+                ncfg.HHEnable = (byte)(ncfg.HHEnable + posDelta) % 24;
+            break;  // mode run
+            case 402:
+                ncfg.MMEnable = (byte)(ncfg.MMEnable + posDelta) % 60;
+            break;
+            case 501:
+                ncfg.HHDisable = (byte)(ncfg.HHDisable + posDelta) % 24;
+            break;  // mode run
+            case 502:
+                ncfg.MMDisable = (byte)(ncfg.MMDisable + posDelta) % 60;
+            break;
+            case 601:
+                nTime.hr = (byte)(nTime.hr + posDelta) % 24;
+            break;  // mode run
+            case 602:  
+                nTime.min = (byte)(nTime.min + posDelta) % 60;
+            break;
+            case 603:
+                nTime.sec = (byte)(nTime.sec + posDelta) % 60;
+            break;
+            case 701:
+                nTime.date = (byte)(nTime.date + posDelta) % 32;
+            break;  // mode run
+            case 702:  
+                nTime.mon = (byte)(nTime.mon + posDelta) % 13;
+            break;
+            case 703:
+                nTime.yr = (int)(nTime.yr + posDelta);
+            break;
+            case 801:
+                ncfg.adc0 = (int)(ncfg.adc0 + posDelta) % 1024;
+            break;  // mode run
+            case 802:
+                ncfg.adc100 = (int)(ncfg.adc100 + posDelta) % 1024;
+            break;
         };
     };
     return 1;
@@ -289,41 +432,7 @@ void processEncoderBtn(){
   }
 };
 // Hold button in/out to Setup menu
-void handlerHeld(){};
-void handlerClicked(){
-    if(!inSetup) {
-        inSubMenu = false;
-        inChange = false;
-        inSubItem = false;
-        posSubMenu = 0;
-        posSubItem = 0;
-        posMenuCurent = 0;
-        updatePosMenu();
-        return;
-    };
-    if(inSubMenu){
-        if(inSubItem){
-            if(inChange){
-                inChange = false;
-                saveItem();                
-            }else{
-                inChange = true;
-            }
-        }else{
-            inSubItem = true;
-            inChange = false;
-        }
-    }else{
-        inSubMenu = true;
-        inSubItem = false;
-        inChange = false;
-        posSubItem = 0;
-    }
-    updatePosMenu();
-};
-void handlerPressed(){};
-void handlerReleased(){};
-void handlerDoubleClicked(){
+void handlerHeld(){
     if(inSetup){
         inSetup = false;
         posSubMenu = 0;
@@ -333,9 +442,46 @@ void handlerDoubleClicked(){
     }
     inSubMenu = false;
     inSubItem = false;
-    inChange = false;
+    updatePosMenu();
 };
+void handlerClicked(){
+    updatePosMenu();
+    if(!inSetup) {
+        inSubMenu = false;
+        inSubItem = false;        
+        posSubMenu = 0;
+        posSubItem = 0;
+        return;
+    };
+    if(inSubMenu){
+        if(inSubItem){
+            if(posSubItem != 0){
+                saveItem();                
+            }else{
+                inSubMenu = false;
+            };
+            inSubItem = false;
+        }else{
+            if(posSubItem != 0){
+                inSubItem = true;                
+            }else{
+                inSubItem = false;
+                inSubMenu = false;
+            }
+        };
+    }else{
+        inSubMenu = true;
+        inSubItem = false;
+        posSubItem = 0;
+    }
+    updatePosMenu();
+};
+void handlerPressed(){};
+void handlerReleased(){};
+void handlerDoubleClicked(){};
 void updatePosMenu(){
     posMenuCurent = posSubMenu*100 + posSubItem;
+    if(!inSubItem){ncfg = cfg;}
+    nTime = t_now;
 }
 
