@@ -1,5 +1,7 @@
 #include <EEPROM.h>
-#include <LCD5110_Basic.h>
+//#include <LCD5110_Basic.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_PCD8544.h>
 #include <avr/pgmspace.h>
 #include <ClickEncoder.h>
 #include <TimerOne.h>
@@ -11,11 +13,11 @@
 //      DC   - Pin 10 15
 //      RST  - Pin 11 11
 //      CS   - Pin 12 14
-#define LCD_SCK 10
-#define LCD_MOSI  11
+#define LCD_CLK 10
+#define LCD_DIN  11
 #define LCD_DC 12
 #define LCD_RST 14
-#define LCD_CS 13
+#define LCD_CE 13
 
 // Relay pin
 #define PUMP_PIN 5
@@ -47,7 +49,7 @@ const char lb_menu6[] PROGMEM="Clock time";
 const char lb_menu7[] PROGMEM="Clock date";
 const char lb_menu8[] PROGMEM="Calibration";
 const char* const lb_menu[] PROGMEM ={lb_menu0, lb_menu1, lb_menu2, lb_menu3, lb_menu4, lb_menu5, lb_menu6, lb_menu7, lb_menu8};
-char  NowMenu=0;
+unsigned long lastView;
 // define
 #define MAX_SUBMENU  9
 // Menu state
@@ -61,7 +63,9 @@ int posMenuCurent = 0;
 // Menu array
 byte maxSubItem[MAX_SUBMENU];
 
-LCD5110 LCD(LCD_SCK,LCD_MOSI,LCD_DC,LCD_RST,LCD_CS);
+//LCD5110 LCD(LCD_SCK,LCD_MOSI,LCD_DC,LCD_RST,LCD_CS);
+Adafruit_PCD8544 LCD = Adafruit_PCD8544(LCD_CLK, LCD_DIN, LCD_DC, LCD_CE, LCD_RST);
+
 extern uint8_t HBIlogo[];
 extern uint8_t SmallFont[];
 //extern uint8_t Arial10In[];
@@ -93,6 +97,7 @@ Time nTime(2016, 5, 4, 10, 00, 50, Time::kSunday);
 
 // pump
 boolean pumpNow = false;
+
 void setup(void) {
     Serial.begin(115200);
     // 2 line enable at first setup
@@ -104,26 +109,50 @@ void setup(void) {
     initECRotaty();
     createMenuList();
 }
+
 void loop(void) {
-  t_now = rtc.time();
-  processEncoder();
-  processEncoderBtn();
-  updateLCD();
-  displayLCD();
-  delay(300);
-//  controlPump();
+    t_now = rtc.time();
+    processEncoder();
+    processEncoderBtn();
+    updateLCD();
+    displayLCD();
+    controlPump();
+    LCD.display();
   //EEPROM.put( _CONFIGS_, cfg );
 }
 
 // Sub program
 void initLCD(){
-    LCD.InitLCD();
-    LCD.setContrast(90);
-    LCD.drawBitmap(0, 0, HBIlogo, 84, 48); delay(2000);
-    LCD.invert(true); delay(500); LCD.invert(false);  delay(500);
-    LCD.setFont(SmallFont);
-    LCD.clrScr();
-    LCD.print("HBInvent.vn" , LEFT, 30);    delay(500);
+//    LCD.InitLCD();
+//    LCD.setContrast(110);
+//    LCD.drawBitmap(0, 0, HBIlogo, 84, 48); delay(2000);
+//    LCD.invert(true); delay(500); LCD.invert(false);  delay(500);
+//    LCD.setFont(SmallFont);
+//    LCD.clrScr();
+//    LCD.print("HBInvent.vn" , LEFT, 30);    delay(500);
+    LCD.begin();
+    LCD.setContrast(70);
+    LCD.display(); // show splashscreen
+    delay(1000);
+// miniature bitmap display
+    LCD.clearDisplay();
+    LCD.drawBitmap(0, 0,HBIlogo, 84, 48, 1);
+    LCD.display();
+    
+    // invert the display
+    LCD.invertDisplay(true);
+    delay(1000); 
+    LCD.invertDisplay(false);
+    delay(1000); 
+    
+    LCD.clearDisplay();   // clears the screen and buffer
+    // text display tests
+    LCD.setTextSize(1);
+    LCD.setTextColor(BLACK);
+    LCD.setCursor(20,0);
+    LCD.println("HBInvent.vn");
+    LCD.display();
+    delay(500);
 };
 void initECRotaty(){
     encoder = new ClickEncoder(A_PIN,B_PIN,BTN_PIN,4);
@@ -147,6 +176,10 @@ float readMoisture(){
 void controlPump(){
     float nowMois = readMoisture();
     boolean pumpNowAuto, pumpNowMan, pumpNowTimer, pumpAllow;
+    int tEnable, tDisable, tNow;
+    tEnable = cfg.HHEnable*60 + cfg.MMEnable;
+    tDisable = cfg.HHDisable*60 + cfg.MMDisable;
+    tNow = t_now.hr*60 + t_now.min;
     if((cfg.Mode == 0)   ){
         pumpNowMan = true;
     }else{
@@ -162,10 +195,18 @@ void controlPump(){
     }else{
         pumpNowTimer = false;
     };
-    if(((t_now.hr<=cfg.HHEnable)&&(t_now.min<=cfg.MMEnable))||((t_now.hr>=cfg.HHDisable)&&(t_now.min>=cfg.MMDisable))){
-        pumpAllow = true;
+    if(tEnable >= tDisable){
+        if((tNow >= tDisable)&&(tNow <= tEnable)){
+            pumpAllow = false;
+        }else{
+            pumpAllow = true;
+        }
     }else{
-        pumpAllow = false;
+        if(((tNow >= tDisable)&&(tNow <= 1439))||((tNow >= 0)&&(tNow <= tEnable))){
+            pumpAllow = false;
+        }else{
+            pumpAllow = true;
+        }
     };
     pumpNow = !((pumpNow||pumpNowAuto||pumpNowMan)&&pumpAllow);
     digitalWrite(13, pumpNow);
@@ -213,13 +254,14 @@ void saveItem(){
 };
 // View
 void displayLCD(){
-      LCD.clrScr();
-      if(posSubItem==0){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[0], LEFT, 0);
-      if(posSubItem==1){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[1], LEFT, 8);
-      if(posSubItem==2){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[2], LEFT, 16);
-      if(posSubItem==3){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[3], LEFT, 24);
-      if(posSubItem==4){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[4], LEFT, 32);
-      if(posSubItem==5){  LCD.invertText(true); }else{  LCD.invertText(false);}; LCD.print(row[5], LEFT, 40);
+    LCD.clearDisplay();
+    LCD.setTextSize(1);
+    if(posSubItem==0){  LCD.setTextColor(WHITE, BLACK); }else{  LCD.setTextColor(BLACK);}; LCD.setCursor(0,0); LCD.print(row[0]);
+    if(posSubItem==1){  LCD.setTextColor(WHITE, BLACK); }else{  LCD.setTextColor(BLACK);}; LCD.setCursor(0,16); LCD.print(row[1]);
+    if(posSubItem==2){  LCD.setTextColor(WHITE, BLACK); }else{  LCD.setTextColor(BLACK);}; LCD.setCursor(0,24); LCD.print(row[2]);
+    if(posSubItem==3){  LCD.setTextColor(WHITE, BLACK); }else{  LCD.setTextColor(BLACK);}; LCD.setCursor(0,32); LCD.print(row[3]);
+    if(posSubItem==4){  LCD.setTextColor(WHITE, BLACK); }else{  LCD.setTextColor(BLACK);}; LCD.setCursor(0,40); LCD.print(row[4]);
+    if(posSubItem==5){  LCD.setTextColor(WHITE, BLACK); }else{  LCD.setTextColor(BLACK);}; LCD.setCursor(0,8); LCD.print(row[5]);
 };
 void updateLCD(){
     String str;   
