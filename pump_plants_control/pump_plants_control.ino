@@ -5,7 +5,8 @@
 #include <avr/pgmspace.h>
 #include <ClickEncoder.h>
 #include <TimerOne.h>
-#include <DS1302.h>
+#include <Time.h>
+#include <DS1307RTC.h>
 // PIN connector
 // LCD function define - pin 10 11 12 14(A0) 15(A1)
 //      SCK  - Pin 8  17
@@ -34,14 +35,14 @@
 #define B_PIN 8
 #define BTN_PIN 7
 // RTC PIN
-#define RTC_CE 3
-#define RTC_IO 4
-#define RTC_SCK 2
+#define RTC_SCL 3
+#define RTC_SDA 4
+//#define RTC_SCK 2
 
 // Text display menu
 const char lb_menu0[] PROGMEM="Pum Control";
 const char lb_menu1[] PROGMEM="Mode run";
-const char lb_menu2[] PROGMEM="Set Moisture";
+const char lb_menu2[] PROGMEM="Do am";
 const char lb_menu3[] PROGMEM="Timer";
 const char lb_menu4[] PROGMEM="Time Enable";
 const char lb_menu5[] PROGMEM="Time Disable";
@@ -67,7 +68,7 @@ byte maxSubItem[MAX_SUBMENU];
 Adafruit_PCD8544 LCD = Adafruit_PCD8544(LCD_CLK, LCD_DIN, LCD_DC, LCD_CE, LCD_RST);
 
 extern uint8_t HBIlogo[];
-extern uint8_t SmallFont[];
+//extern uint8_t SmallFont[];
 //extern uint8_t Arial10In[];
 //extern uint8_t Arial10[];
 char row[6][14];
@@ -91,13 +92,14 @@ ClickEncoder *encoder;
 int16_t lastEn, valueEn;
 
 // Create a DS1302 object.
-DS1302 rtc(RTC_CE,RTC_IO,RTC_SCK);
-Time t_now(2016, 5, 4, 10, 00, 50, Time::kSunday);
-Time nTime(2016, 5, 4, 10, 00, 50, Time::kSunday);
+//DS1302 rtc(RTC_RST,RTC_IO,RTC_SCK);
+tmElements_t t_now;
+tmElements_t nTime;
 
 // pump
 boolean pumpNow = false;
-
+int tLastTimer = 0;
+boolean lastTimerState = false;
 void setup(void) {
     Serial.begin(115200);
     // 2 line enable at first setup
@@ -107,11 +109,13 @@ void setup(void) {
     initGPIO();
     initLCD();
     initECRotaty();
+//    setTime(t_now);
     createMenuList();
 }
 
 void loop(void) {
-    t_now = rtc.time();
+    tmElements_t tm;
+    if (RTC.read(tm)) t_now = tm;
     processEncoder();
     processEncoderBtn();
     updateLCD();
@@ -135,22 +139,22 @@ void initLCD(){
     LCD.display(); // show splashscreen
     delay(1000);
 // miniature bitmap display
-    LCD.clearDisplay();
-    LCD.drawBitmap(0, 0,HBIlogo, 84, 48, 1);
-    LCD.display();
+//    LCD.clearDisplay();
+//    LCD.drawBitmap(0, 0,HBIlogo, 84, 48, 1);
+//    LCD.display();
     
     // invert the display
-    LCD.invertDisplay(true);
-    delay(1000); 
-    LCD.invertDisplay(false);
-    delay(1000); 
+//LCD.invertDisplay(true);
+//    delay(1000); 
+//    LCD.invertDisplay(false);
+//    delay(1000); 
     
     LCD.clearDisplay();   // clears the screen and buffer
     // text display tests
     LCD.setTextSize(1);
     LCD.setTextColor(BLACK);
     LCD.setCursor(20,0);
-    LCD.println("HBInvent.vn");
+    LCD.println(F("HBInvent.vn"));
     LCD.display();
     delay(500);
 };
@@ -170,7 +174,7 @@ int readADC(){
     return analogRead(MOISTURE_PIN);
 };
 float readMoisture(){
-    return (float)(100*(analogRead(MOISTURE_PIN)-cfg.adc0)/(cfg.adc100-cfg.adc0));
+    return (100*(analogRead(MOISTURE_PIN)-cfg.adc0)/(cfg.adc100-cfg.adc0));
 };
 // Control
 void controlPump(){
@@ -179,23 +183,45 @@ void controlPump(){
     int tEnable, tDisable, tNow;
     tEnable = cfg.HHEnable*60 + cfg.MMEnable;
     tDisable = cfg.HHDisable*60 + cfg.MMDisable;
-    tNow = t_now.hr*60 + t_now.min;
-    if((cfg.Mode == 0)   ){
-        pumpNowMan = true;
-    }else{
+    tNow = t_now.Hour*60 + t_now.Minute;
+    if((cfg.Mode == 0)   ){// external button
         pumpNowMan = false;
-    };
-    if((cfg.Mode == 1)&&(nowMois<=cfg.moisSet - cfg.moisOffset)&&!(nowMois>=cfg.moisSet + cfg.moisOffset)){
-        pumpNowAuto = true;
-    }else{
-        pumpNowAuto = false;
-    };
-    if((cfg.Mode == 2)   ){
-        pumpNowTimer = true;
-    }else{
         pumpNowTimer = false;
-    };
-    if(tEnable >= tDisable){
+        pumpNowAuto = false;
+    }else if(cfg.Mode == 1){
+        pumpNowMan = false;
+        pumpNowTimer = false;        
+        if(nowMois <= (cfg.moisSet - cfg.moisOffset)){
+            pumpNowAuto = true;
+        };
+        if(nowMois > (cfg.moisSet + cfg.moisOffset)){
+            pumpNowAuto = false;
+        }
+    }else if((cfg.Mode == 2)){
+        pumpNowMan = false;
+        pumpNowAuto = false;
+        int minNow = (int) (millis()/60000);
+        if(lastTimerState){
+            if(minNow - tLastTimer > cfg.timerOn){
+                pumpNowTimer = false;
+                tLastTimer = minNow;
+                lastTimerState = false;
+            }else{
+                pumpNowTimer = true;
+            }
+        }else{
+            if(minNow - tLastTimer > cfg.timerOff){
+                pumpNowTimer = true;
+                tLastTimer = minNow;
+                lastTimerState = true;
+            }else{
+                pumpNowTimer = false;
+            }
+        };
+    }
+    if(tEnable == tDisable){
+        pumpAllow = true;
+    }else if(tEnable > tDisable){
         if((tNow >= tDisable)&&(tNow <= tEnable)){
             pumpAllow = false;
         }else{
@@ -208,19 +234,10 @@ void controlPump(){
             pumpAllow = true;
         }
     };
-    pumpNow = !((pumpNow||pumpNowAuto||pumpNowMan)&&pumpAllow);
-    digitalWrite(13, pumpNow);
+    pumpNow = (pumpNowMan||pumpNowAuto||pumpNowTimer)&&pumpAllow;
+    digitalWrite(PUMP_PIN, !pumpNow);
 };
 
-float calMoisture(int adcVal){
-  return (float)(adcVal*(cfg.adc100-cfg.adc0)+100*cfg.adc0);
-};
-
-void setTime(Time& t){  //Sunday, September 22, 2013 at 01:38:50. Time t(2013, 9, 22, 1, 38, 50, Time::kSunday);
-  rtc.writeProtect(false);
-  rtc.halt(false);
-  rtc.time(t);
-};
 void timerIsr() {
   encoder->service();
 };
@@ -238,16 +255,9 @@ void saveItem(){
                     break;             
                 }
             case 6:
-                nTime.date = t_now.date;
-                nTime.mon = t_now.mon;
-                nTime.yr = t_now.yr;
-                setTime(nTime);
-            break;  // mode run
-            case 7:  
-                nTime.hr = t_now.hr;
-                nTime.min = t_now.min;
-                nTime.sec = t_now.sec;            
-                setTime(nTime);
+            case 7:   
+//                if(RTC.set(makeTime(nTime))){Serial.println("save");}else{Serial.println("error");};        
+                RTC.setDateTime(nTime);
             break;
             default: break;
     };
@@ -268,9 +278,9 @@ void updateLCD(){
     if(!inSetup){
 //        LCD.setFont(SmallFont); // font 6x8
         strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
-        str = String(t_now.date) + "-" + String(t_now.mon) + "-" + String(t_now.yr);
+        str = String(t_now.Day) + "-" + String(t_now.Month) + "-" + String(t_now.Year);
         str.toCharArray(row[1],13);
-        str = String(t_now.hr) + ":" + String(t_now.min) + ":" + String(t_now.sec);
+        str = String(t_now.Hour) + ":" + String(t_now.Minute) + ":" + String(t_now.Second);
         str.toCharArray(row[2],13);
         str = "M%: "+String(readMoisture());
         str.toCharArray(row[3],13);
@@ -334,22 +344,22 @@ void updateLCD(){
             break;  // mode run
             case 6:
                 strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
-                str = "HH: "+ String(nTime.hr);
+                str = "HH: "+ String(nTime.Hour);
                 str.toCharArray(row[1],13);
-                str = "MM: "+ String(nTime.min);
+                str = "MM: "+ String(nTime.Minute);
                 str.toCharArray(row[2],13);
-                str = "SS: "+ String(nTime.sec);
+                str = "SS: "+ String(nTime.Second);
                 str.toCharArray(row[3],13);
                 strcpy(row[4], ""); 
                 strcpy(row[5], "");            
             break;
             case 7:
                 strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
-                str = "dd  : "+ String(nTime.date);
+                str = "dd  : "+ String(nTime.Day);
                 str.toCharArray(row[1],13);
-                str = "mm  : "+ String(nTime.mon);
+                str = "mm  : "+ String(nTime.Month);
                 str.toCharArray(row[2],13);
-                str = "yyyy: "+ String(nTime.yr);
+                str = "yyyy: "+ String(nTime.Year);
                 str.toCharArray(row[3],13);
                 strcpy(row[4], ""); 
                 strcpy(row[5], "");            
@@ -434,28 +444,30 @@ boolean processEncoder(){
                 ncfg.MMDisable = (byte)(ncfg.MMDisable + posDelta) % 60;
             break;
             case 601:
-                nTime.hr = (byte)(nTime.hr + posDelta) % 24;
+                nTime.Hour = (byte)(nTime.Hour + posDelta) % 24;
             break;  // mode run
             case 602:  
-                nTime.min = (byte)(nTime.min + posDelta) % 60;
+                nTime.Minute = (byte)(nTime.Minute + posDelta) % 60;
             break;
             case 603:
-                nTime.sec = (byte)(nTime.sec + posDelta) % 60;
+                nTime.Second = (byte)(nTime.Second + posDelta) % 60;
             break;
             case 701:
-                nTime.date = (byte)(nTime.date + posDelta) % 32;
+                nTime.Day = (byte)(nTime.Day + posDelta) % 32;
             break;  // mode run
             case 702:  
-                nTime.mon = (byte)(nTime.mon + posDelta) % 13;
+                nTime.Month = (byte)(nTime.Month + posDelta) % 13;
             break;
             case 703:
-                nTime.yr = (int)(nTime.yr + posDelta);
+                nTime.Year = (int)(nTime.Year + posDelta);
             break;
             case 801:
-                ncfg.adc0 = (int)(ncfg.adc0 + posDelta) % 1024;
+                ncfg.adc0 = analogRead(MOISTURE_PIN);
+            //    ncfg.adc0 = (int)(ncfg.adc0 + posDelta) % 1024;
             break;  // mode run
             case 802:
-                ncfg.adc100 = (int)(ncfg.adc100 + posDelta) % 1024;
+                ncfg.adc100 = analogRead(MOISTURE_PIN);
+            ///    ncfg.adc100 = (int)(ncfg.adc100 + posDelta) % 1024;
             break;
         };
     };
@@ -474,18 +486,7 @@ void processEncoderBtn(){
   }
 };
 // Hold button in/out to Setup menu
-void handlerHeld(){
-    if(inSetup){
-        inSetup = false;
-        posSubMenu = 0;
-    }else{
-        inSetup = true;
-        posSubMenu = 1;
-    }
-    inSubMenu = false;
-    inSubItem = false;
-    updatePosMenu();
-};
+void handlerHeld(){};
 void handlerClicked(){
     updatePosMenu();
     if(!inSetup) {
@@ -520,10 +521,23 @@ void handlerClicked(){
 };
 void handlerPressed(){};
 void handlerReleased(){};
-void handlerDoubleClicked(){};
+void handlerDoubleClicked(){
+    if(inSetup){
+        inSetup = false;
+        posSubMenu = 0;
+    }else{
+        inSetup = true;
+        posSubMenu = 1;
+    }
+    inSubMenu = false;
+    inSubItem = false;
+    updatePosMenu();
+};
 void updatePosMenu(){
     posMenuCurent = posSubMenu*100 + posSubItem;
-    if(!inSubItem){ncfg = cfg;}
-    nTime = t_now;
+    if(!inSubItem){
+        ncfg = cfg;
+        nTime = t_now;
+    }
 }
 

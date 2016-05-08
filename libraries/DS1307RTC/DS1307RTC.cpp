@@ -49,7 +49,23 @@ bool DS1307RTC::set(time_t t)
   tm.Second &= 0x7f;  // start the clock
   write(tm); 
 }
+void DS1307RTC::setDateTime(tmElements_t& tm){
+  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.write(0x00); //stop Oscillator
 
+  Wire.write(dec2bcd(tm.Second));
+  Wire.write(dec2bcd(tm.Minute));
+  Wire.write(dec2bcd(tm.Hour));
+  Wire.write(dec2bcd(7));
+  Wire.write(dec2bcd(tm.Day));
+  Wire.write(dec2bcd(tm.Month));
+  Wire.write(dec2bcd(tm.Year));
+
+  Wire.write(0x00); //start 
+
+  Wire.endTransmission();
+
+}
 // Aquire data from the RTC chip in BCD format
 bool DS1307RTC::read(tmElements_t &tm)
 {
