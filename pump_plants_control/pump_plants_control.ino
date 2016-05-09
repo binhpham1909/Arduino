@@ -116,6 +116,7 @@ void setup(void) {
 void loop(void) {
     tmElements_t tm;
     if (RTC.read(tm)) t_now = tm;
+    tNow = t_now.Hour*3600 + t_now.Minute*60 + t_now.Second;
     processEncoder();
     processEncoderBtn();
     updateLCD();
@@ -136,8 +137,8 @@ void initLCD(){
 //    LCD.print("HBInvent.vn" , LEFT, 30);    delay(500);
     LCD.begin();
     LCD.setContrast(70);
-    LCD.display(); // show splashscreen
-    delay(1000);
+//    LCD.display(); // show splashscreen
+//    delay(1000);
 // miniature bitmap display
 //    LCD.clearDisplay();
 //    LCD.drawBitmap(0, 0,HBIlogo, 84, 48, 1);
@@ -151,12 +152,16 @@ void initLCD(){
     
     LCD.clearDisplay();   // clears the screen and buffer
     // text display tests
+    LCD.setTextSize(2);
+    LCD.setTextColor(BLACK);
+    LCD.setCursor(30,10);
+    LCD.println(F("HBI"));
     LCD.setTextSize(1);
     LCD.setTextColor(BLACK);
-    LCD.setCursor(20,0);
+    LCD.setCursor(0,30);
     LCD.println(F("HBInvent.vn"));
     LCD.display();
-    delay(500);
+    delay(5000);
 };
 void initECRotaty(){
     encoder = new ClickEncoder(A_PIN,B_PIN,BTN_PIN,4);
@@ -182,7 +187,6 @@ void controlPump(){
     boolean pumpNowAuto, pumpNowMan, pumpNowTimer, pumpAllow;
     tEnable = cfg.HHEnable*3600 + cfg.MMEnable*60;
     tDisable = cfg.HHDisable*3600 + cfg.MMDisable*60;
-    tNow = t_now.Hour*3600 + t_now.Minute*60 + t_now.Second;
     if((cfg.Mode == 0)   ){// external button
         pumpNowMan = false;
         pumpNowTimer = false;
@@ -286,15 +290,15 @@ void updateLCD(){
 //        LCD.setFont(SmallFont); // font 6x8
         if(cfg.Mode == 2){
             if(lastTimerState){
-                str = "Wait :" + String(tLastTimer + cfg.timerOff*60 - tNow) + " s";
-            }else{
                 str = "Wait :" + String(tLastTimer + cfg.timerOn*60 - tNow) + " s";
+            }else{
+                str = "Wait :" + String(tLastTimer + cfg.timerOff*60 - tNow) + " s";
             }
         }else{
             str = "M%: "+String(readMoisture());           
         }
         str.toCharArray(row[3],13); 
-        str = getModeLabel(ncfg.Mode);
+        str = getModeLabel(cfg.Mode);
         str.toCharArray(row[0],13);
         str = String(t_now.Day) + "-" + String(t_now.Month) + "-" + String(t_now.Year);
         str.toCharArray(row[1],13);
