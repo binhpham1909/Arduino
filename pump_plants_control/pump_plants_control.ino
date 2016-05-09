@@ -100,6 +100,7 @@ tmElements_t nTime;
 boolean pumpNow = false;
 boolean lastTimerState = false;
 long tEnable, tDisable, tNow, tLastTimer;
+boolean pumpNowAuto, pumpNowMan, pumpNowTimer, pumpAllow;
 void setup(void) {
     Serial.begin(115200);
     // 2 line enable at first setup
@@ -109,7 +110,6 @@ void setup(void) {
     initGPIO();
     initLCD();
     initECRotaty();
-//    setTime(t_now);
     createMenuList();
 }
 
@@ -123,33 +123,14 @@ void loop(void) {
     displayLCD();
     controlPump();
     LCD.display();
-  //EEPROM.put( _CONFIGS_, cfg );
 }
 
 // Sub program
 void initLCD(){
-//    LCD.InitLCD();
-//    LCD.setContrast(110);
-//    LCD.drawBitmap(0, 0, HBIlogo, 84, 48); delay(2000);
-//    LCD.invert(true); delay(500); LCD.invert(false);  delay(500);
-//    LCD.setFont(SmallFont);
-//    LCD.clrScr();
-//    LCD.print("HBInvent.vn" , LEFT, 30);    delay(500);
     LCD.begin();
     LCD.setContrast(70);
     LCD.display(); // show splashscreen
-    delay(1000);
-// miniature bitmap display
-//    LCD.clearDisplay();
-//    LCD.drawBitmap(0, 0,HBIlogo, 84, 48, 1);
-//    LCD.display();
-    
-    // invert the display
-//LCD.invertDisplay(true);
-//    delay(1000); 
-//    LCD.invertDisplay(false);
-//    delay(1000); 
-    
+    delay(2000);
     LCD.clearDisplay();   // clears the screen and buffer
     // text display tests
     LCD.setTextSize(2);
@@ -161,7 +142,7 @@ void initLCD(){
     LCD.setCursor(0,30);
     LCD.println(F("HBInvent.vn"));
     LCD.display();
-    delay(5000);
+    delay(1000);
 };
 void initECRotaty(){
     encoder = new ClickEncoder(A_PIN,B_PIN,BTN_PIN,4);
@@ -184,7 +165,6 @@ float readMoisture(){
 // Control
 void controlPump(){
     float nowMois = readMoisture();
-    boolean pumpNowAuto, pumpNowMan, pumpNowTimer, pumpAllow;
     tEnable = cfg.HHEnable*3600 + cfg.MMEnable*60;
     tDisable = cfg.HHDisable*3600 + cfg.MMDisable*60;
     if((cfg.Mode == 0)   ){// external button
@@ -304,14 +284,17 @@ void updateLCD(){
         str.toCharArray(row[1],13);
         str = String(t_now.Hour) + ":" + String(t_now.Minute) + ":" + String(t_now.Second);
         str.toCharArray(row[2],13);
-
         if(pumpNow){
             strcpy(row[4], "PUMP: ON");
         }
         else{
             strcpy(row[4], "PUMP: OFF");
-        }
-        strcpy(row[5], "");
+        };
+        if(pumpAllow){
+            strcpy(row[5], "Time Enable");
+        }else{
+            strcpy(row[5], "Time Disable");
+        };
     }else{
         switch(posSubMenu){
             case 1:
@@ -391,8 +374,10 @@ void updateLCD(){
                 str.toCharArray(row[1],13);
                 str = "100%: "+ String(ncfg.adc100);
                 str.toCharArray(row[2],13);
-                str = "Sensor : "+ String(analogRead(MOISTURE_PIN));
-                str.toCharArray(row[4],13);
+                if(((int)(millis()/500))%2 == 1){
+                    str = "Sensor : "+ String(analogRead(MOISTURE_PIN));
+                    str.toCharArray(row[4],13);                    
+                }
                 strcpy(row[3], ""); 
                 strcpy(row[5], "");            
             break;
