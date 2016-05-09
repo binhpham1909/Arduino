@@ -137,8 +137,8 @@ void initLCD(){
 //    LCD.print("HBInvent.vn" , LEFT, 30);    delay(500);
     LCD.begin();
     LCD.setContrast(70);
-//    LCD.display(); // show splashscreen
-//    delay(1000);
+    LCD.display(); // show splashscreen
+    delay(1000);
 // miniature bitmap display
 //    LCD.clearDisplay();
 //    LCD.drawBitmap(0, 0,HBIlogo, 84, 48, 1);
@@ -391,8 +391,9 @@ void updateLCD(){
                 str.toCharArray(row[1],13);
                 str = "100%: "+ String(ncfg.adc100);
                 str.toCharArray(row[2],13);
-                strcpy(row[3], "");
-                strcpy(row[4], ""); 
+                str = "Sensor : "+ String(analogRead(MOISTURE_PIN));
+                str.toCharArray(row[4],13);
+                strcpy(row[3], ""); 
                 strcpy(row[5], "");            
             break;
             default: break;
@@ -483,12 +484,12 @@ boolean processEncoder(){
                 nTime.Year = (byte)(nTime.Year + posDelta) % 100;
             break;
             case 801:
-                ncfg.adc0 = analogRead(MOISTURE_PIN);
-            //    ncfg.adc0 = (int)(ncfg.adc0 + posDelta) % 1024;
+            //    ncfg.adc0 = analogRead(MOISTURE_PIN);
+                ncfg.adc0 = (int)(ncfg.adc0 + posDelta) % 1024;
             break;  // mode run
             case 802:
-                ncfg.adc100 = analogRead(MOISTURE_PIN);
-            ///    ncfg.adc100 = (int)(ncfg.adc100 + posDelta) % 1024;
+            //    ncfg.adc100 = analogRead(MOISTURE_PIN);
+                ncfg.adc100 = (int)(ncfg.adc100 + posDelta) % 1024;
             break;
         };
     };
