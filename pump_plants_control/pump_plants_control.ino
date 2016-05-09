@@ -98,8 +98,8 @@ tmElements_t nTime;
 
 // pump
 boolean pumpNow = false;
-int tLastTimer = 0;
 boolean lastTimerState = false;
+long tEnable, tDisable, tNow, tLastTimer;
 void setup(void) {
     Serial.begin(115200);
     // 2 line enable at first setup
@@ -180,10 +180,9 @@ float readMoisture(){
 void controlPump(){
     float nowMois = readMoisture();
     boolean pumpNowAuto, pumpNowMan, pumpNowTimer, pumpAllow;
-    int tEnable, tDisable, tNow;
-    tEnable = cfg.HHEnable*60 + cfg.MMEnable;
-    tDisable = cfg.HHDisable*60 + cfg.MMDisable;
-    tNow = t_now.Hour*60 + t_now.Minute;
+    tEnable = cfg.HHEnable*3600 + cfg.MMEnable*60;
+    tDisable = cfg.HHDisable*3600 + cfg.MMDisable*60;
+    tNow = t_now.Hour*3600 + t_now.Minute*60 + t_now.Second;
     if((cfg.Mode == 0)   ){// external button
         pumpNowMan = false;
         pumpNowTimer = false;
@@ -200,19 +199,18 @@ void controlPump(){
     }else if((cfg.Mode == 2)){
         pumpNowMan = false;
         pumpNowAuto = false;
-        int minNow = (int) (millis()/60000);
         if(lastTimerState){
-            if(minNow - tLastTimer > cfg.timerOn){
+            if(tNow - tLastTimer > cfg.timerOn*60){
                 pumpNowTimer = false;
-                tLastTimer = minNow;
+                tLastTimer = tNow;
                 lastTimerState = false;
             }else{
                 pumpNowTimer = true;
             }
         }else{
-            if(minNow - tLastTimer > cfg.timerOff){
+            if(tNow - tLastTimer > cfg.timerOff*60){
                 pumpNowTimer = true;
-                tLastTimer = minNow;
+                tLastTimer = tNow;
                 lastTimerState = true;
             }else{
                 pumpNowTimer = false;
@@ -228,7 +226,7 @@ void controlPump(){
             pumpAllow = true;
         }
     }else{
-        if(((tNow >= tDisable)&&(tNow <= 1439))||((tNow >= 0)&&(tNow <= tEnable))){
+        if(((tNow >= tDisable)&&(tNow <= 86399))||((tNow >= 0)&&(tNow <= tEnable))){
             pumpAllow = false;
         }else{
             pumpAllow = true;
@@ -251,13 +249,22 @@ void saveItem(){
             case 8:
                 {
                     EEPROM.put( _CONFIGS_, ncfg );
-                    EEPROM.get( _CONFIGS_, cfg );   
-                    break;             
+                    EEPROM.get( _CONFIGS_, cfg );              
                 }
+                break; 
             case 6:
-            case 7:   
-//                if(RTC.set(makeTime(nTime))){Serial.println("save");}else{Serial.println("error");};        
-                RTC.setDateTime(nTime);
+                nTime.Day = t_now.Day;
+                nTime.Month = t_now.Month;
+                nTime.Year = t_now.Year;
+                RTC.write(nTime);
+                nTime = t_now;
+            break;  // mode run
+            case 7:  
+                nTime.Hour = t_now.Hour;
+                nTime.Minute = t_now.Minute;
+                nTime.Second = t_now.Second;            
+                RTC.write(nTime);
+                nTime = t_now;
             break;
             default: break;
     };
@@ -277,13 +284,23 @@ void updateLCD(){
     String str;   
     if(!inSetup){
 //        LCD.setFont(SmallFont); // font 6x8
-        strcpy_P(row[0], (char*)pgm_read_word(&(lb_menu[posSubMenu])));
+        if(cfg.Mode == 2){
+            if(lastTimerState){
+                str = "Wait :" + String(tLastTimer + cfg.timerOff*60 - tNow) + " s";
+            }else{
+                str = "Wait :" + String(tLastTimer + cfg.timerOn*60 - tNow) + " s";
+            }
+        }else{
+            str = "M%: "+String(readMoisture());           
+        }
+        str.toCharArray(row[3],13); 
+        str = getModeLabel(ncfg.Mode);
+        str.toCharArray(row[0],13);
         str = String(t_now.Day) + "-" + String(t_now.Month) + "-" + String(t_now.Year);
         str.toCharArray(row[1],13);
         str = String(t_now.Hour) + ":" + String(t_now.Minute) + ":" + String(t_now.Second);
         str.toCharArray(row[2],13);
-        str = "M%: "+String(readMoisture());
-        str.toCharArray(row[3],13);
+
         if(pumpNow){
             strcpy(row[4], "PUMP: ON");
         }
@@ -459,7 +476,7 @@ boolean processEncoder(){
                 nTime.Month = (byte)(nTime.Month + posDelta) % 13;
             break;
             case 703:
-                nTime.Year = (int)(nTime.Year + posDelta);
+                nTime.Year = (byte)(nTime.Year + posDelta) % 100;
             break;
             case 801:
                 ncfg.adc0 = analogRead(MOISTURE_PIN);

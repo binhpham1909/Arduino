@@ -49,23 +49,6 @@ bool DS1307RTC::set(time_t t)
   tm.Second &= 0x7f;  // start the clock
   write(tm); 
 }
-void DS1307RTC::setDateTime(tmElements_t& tm){
-  Wire.beginTransmission(DS1307_CTRL_ID);
-  Wire.write(0x00); //stop Oscillator
-
-  Wire.write(dec2bcd(tm.Second));
-  Wire.write(dec2bcd(tm.Minute));
-  Wire.write(dec2bcd(tm.Hour));
-  Wire.write(dec2bcd(7));
-  Wire.write(dec2bcd(tm.Day));
-  Wire.write(dec2bcd(tm.Month));
-  Wire.write(dec2bcd(tm.Year));
-
-  Wire.write(0x00); //start 
-
-  Wire.endTransmission();
-
-}
 // Aquire data from the RTC chip in BCD format
 bool DS1307RTC::read(tmElements_t &tm)
 {
@@ -93,7 +76,7 @@ bool DS1307RTC::read(tmElements_t &tm)
   tm.Wday = bcd2dec(Wire.read() );
   tm.Day = bcd2dec(Wire.read() );
   tm.Month = bcd2dec(Wire.read() );
-  tm.Year = y2kYearToTm((bcd2dec(Wire.read())));
+  tm.Year = (bcd2dec(Wire.read()));
 #else
   sec = Wire.receive();
   tm.Second = bcd2dec(sec & 0x7f);   
@@ -102,7 +85,7 @@ bool DS1307RTC::read(tmElements_t &tm)
   tm.Wday = bcd2dec(Wire.receive() );
   tm.Day = bcd2dec(Wire.receive() );
   tm.Month = bcd2dec(Wire.receive() );
-  tm.Year = y2kYearToTm((bcd2dec(Wire.receive())));
+  tm.Year = (bcd2dec(Wire.receive()));
 #endif
   if (sec & 0x80) return false; // clock is halted
   return true;
@@ -119,7 +102,7 @@ bool DS1307RTC::write(tmElements_t &tm)
   Wire.write(dec2bcd(tm.Wday));   
   Wire.write(dec2bcd(tm.Day));
   Wire.write(dec2bcd(tm.Month));
-  Wire.write(dec2bcd(tmYearToY2k(tm.Year))); 
+  Wire.write(dec2bcd(tm.Year)); 
 #else  
   Wire.send(0x00); // reset register pointer  
   Wire.send(dec2bcd(tm.Second)) ;   
@@ -128,7 +111,7 @@ bool DS1307RTC::write(tmElements_t &tm)
   Wire.send(dec2bcd(tm.Wday));   
   Wire.send(dec2bcd(tm.Day));
   Wire.send(dec2bcd(tm.Month));
-  Wire.send(dec2bcd(tmYearToY2k(tm.Year)));   
+  Wire.send(dec2bcd(tm.Year));   
 #endif
   if (Wire.endTransmission() != 0) {
     exists = false;
