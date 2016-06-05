@@ -67,7 +67,7 @@ byte maxSubItem[MAX_SUBMENU];
 //LCD5110 LCD(LCD_SCK,LCD_MOSI,LCD_DC,LCD_RST,LCD_CS);
 Adafruit_PCD8544 LCD = Adafruit_PCD8544(LCD_CLK, LCD_DIN, LCD_DC, LCD_CE, LCD_RST);
 
-extern uint8_t HBIlogo[];
+//extern uint8_t HBIlogo[];
 //extern uint8_t SmallFont[];
 //extern uint8_t Arial10In[];
 //extern uint8_t Arial10[];
@@ -101,6 +101,10 @@ boolean pumpNow = false;
 boolean lastTimerState = false;
 long tEnable, tDisable, tNow, tLastTimer;
 boolean pumpNowAuto, pumpNowMan, pumpNowTimer, pumpAllow;
+
+// Serial
+String serialInput="";
+boolean serialComplete = false;
 void setup(void) {
     Serial.begin(115200);
     // 2 line enable at first setup
@@ -123,8 +127,138 @@ void loop(void) {
     displayLCD();
     controlPump();
     LCD.display();
+    processSerial(serialInput);
 }
 
+void serialEvent(){
+    while (!serialComplete&&Serial.available()) {
+        // get the new byte:
+        char inChar = (char)Serial.read();
+        // add it to the inputString:
+        serialInput += inChar;
+        // if the incoming character is a newline, set a flag
+        // so the main loop can do something about it:
+        if (inChar == '\n') {
+            serialComplete = true;
+        }
+    }
+};
+void processSerial(String& input){
+    if(!serialComplete)  return;
+    int startS = input.indexOf('>');
+    int sepS = input.indexOf(':');
+    int endS = input.indexOf('\n');
+    char br = '"';
+    char se = ':';
+    char ne = ',';
+    char op = '{';
+    char cl = '}';
+    String comma = input.substring(startS+1,sepS);
+    String val = input.substring(sepS + 1, endS);
+    int comm = comma.toInt();
+//    Serial.println(comm);
+//    Serial.println(val);
+    if(comm == 1){
+        Serial.print(op);
+        Serial.print(br);   Serial.print(F("mode"));   Serial.print(br);   Serial.print(se);     Serial.print(br);   Serial.print(cfg.Mode);   Serial.print(br); Serial.print(ne);
+        Serial.print(br);   Serial.print(F("adc0"));   Serial.print(br);   Serial.print(se);     Serial.print(br);   Serial.print(cfg.adc0);   Serial.print(br); Serial.print(ne);
+        Serial.print(br);   Serial.print(F("adc100")); Serial.print(br);   Serial.print(se);     Serial.print(br);   Serial.print(cfg.adc100); Serial.print(br); Serial.print(ne);
+        Serial.print(br);   Serial.print(F("moisture")); Serial.print(br);   Serial.print(se);     Serial.print(br);   Serial.print(cfg.moisSet); Serial.print(br); Serial.print(ne);
+        Serial.print(br);   Serial.print(F("moistureOffset")); Serial.print(br);   Serial.print(se);     Serial.print(br);   Serial.print(cfg.moisOffset); Serial.print(br); Serial.print(ne);
+        Serial.print(br);   Serial.print(F("timerOn")); Serial.print(br);   Serial.print(se);     Serial.print(br);   Serial.print(cfg.timerOn); Serial.print(br); Serial.print(ne);
+        Serial.print(br);   Serial.print(F("timerOff")); Serial.print(br);   Serial.print(se);     Serial.print(br);   Serial.print(cfg.timerOff); Serial.print(br); Serial.print(ne);
+        Serial.print(br);   Serial.print(F("timeEnable")); Serial.print(br);   Serial.print(se);     Serial.print(br);   Serial.print(cfg.HHEnable); Serial.print('-');   Serial.print(cfg.MMEnable); Serial.print(br); Serial.print(ne);
+        Serial.print(br);   Serial.print(F("timeEnable")); Serial.print(br);   Serial.print(se);     Serial.print(br);   Serial.print(cfg.HHDisable); Serial.print('-');   Serial.print(cfg.MMDisable); Serial.print(br);
+        Serial.println(cl);
+    }else if(comm == 11){
+        ncfg.Mode = val.toInt();
+        EEPROM.put( _CONFIGS_, ncfg );
+        EEPROM.get( _CONFIGS_, cfg );
+        Serial.println(F("OK"));
+    }else if(comm == 12){
+        ncfg.timerOn = val.toInt();
+        EEPROM.put( _CONFIGS_, ncfg );
+        EEPROM.get( _CONFIGS_, cfg ); 
+        Serial.println(F("OK"));
+    }else if(comm == 13){
+        ncfg.timerOff = val.toInt();
+        EEPROM.put( _CONFIGS_, ncfg );
+        EEPROM.get( _CONFIGS_, cfg ); 
+        Serial.println(F("OK"));
+    }else if(comm == 14){
+        ncfg.adc0 = val.toInt();
+        EEPROM.put( _CONFIGS_, ncfg );
+        EEPROM.get( _CONFIGS_, cfg ); 
+        Serial.println(F("OK"));
+    }else if(comm == 15){
+        ncfg.adc100 = val.toInt();
+        EEPROM.put( _CONFIGS_, ncfg );
+        EEPROM.get( _CONFIGS_, cfg ); 
+        Serial.println(F("OK"));
+    }else if(comm == 16){
+        ncfg.moisSet = val.toFloat();
+        EEPROM.put( _CONFIGS_, ncfg );
+        EEPROM.get( _CONFIGS_, cfg ); 
+        Serial.println(F("OK"));
+    }else if(comm == 17){
+        ncfg.moisOffset = val.toFloat();
+        EEPROM.put( _CONFIGS_, ncfg );
+        EEPROM.get( _CONFIGS_, cfg ); 
+        Serial.println(F("OK"));
+    }else if(comm == 18){
+        ncfg.HHEnable = val.toInt();
+        EEPROM.put( _CONFIGS_, ncfg );
+        EEPROM.get( _CONFIGS_, cfg ); 
+        Serial.println(F("OK"));
+    }else if(comm == 19){
+        ncfg.MMEnable = val.toInt();
+        EEPROM.put( _CONFIGS_, ncfg );
+        EEPROM.get( _CONFIGS_, cfg ); 
+        Serial.println(F("OK"));
+    }else if(comm == 20){
+        ncfg.HHDisable = val.toInt();
+        EEPROM.put( _CONFIGS_, ncfg );
+        EEPROM.get( _CONFIGS_, cfg ); 
+        Serial.println(F("OK"));
+    }else if(comm == 21){
+        ncfg.MMDisable = val.toInt();
+        EEPROM.put( _CONFIGS_, ncfg );
+        EEPROM.get( _CONFIGS_, cfg ); 
+        Serial.println(F("OK"));
+    }else if(comm == 22){
+        nTime = t_now;
+        nTime.Day = val.toInt();
+        RTC.write(nTime);
+        Serial.println(F("OK"));
+    }else if(comm == 23){
+        nTime = t_now;
+        nTime.Month = val.toInt();
+        RTC.write(nTime);
+        Serial.println(F("OK"));
+    }else if(comm == 24){
+        nTime = t_now;
+        nTime.Year = val.toInt();
+        RTC.write(nTime);
+        Serial.println(F("OK"));
+    }else if(comm == 25){
+        nTime = t_now;
+        nTime.Hour = val.toInt();
+        RTC.write(nTime);
+        Serial.println(F("OK"));
+    }else if(comm == 26){
+        nTime = t_now;
+        nTime.Minute = val.toInt();
+        RTC.write(nTime);
+        Serial.println(F("OK"));
+    }else if(comm == 27){
+        nTime = t_now;
+        nTime.Second = val.toInt();
+        RTC.write(nTime);
+        Serial.println(F("OK"));
+    }
+    input = "";
+    serialComplete = false;
+};
 // Sub program
 void initLCD(){
     LCD.begin();
