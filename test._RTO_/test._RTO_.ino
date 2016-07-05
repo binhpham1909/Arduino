@@ -1,6 +1,6 @@
 #include <Arduino_FreeRTOS.h>
 #include <avr/pgmspace.h>
-#include <ClickEncoder.h>
+#include <RotatyEncoderMenu.h>
 #include <LiquidCrystal_I2C.h>
 #include <OneWire.h>
 // Relay pin
@@ -25,7 +25,7 @@ int ledval = 0;
 // Sensor
 
 float insideT, outsideT;
-ClickEncoder *encoder;
+RotatyEncoderMenu *enMenu;
 
 void TaskReadSensor( void *pvParameters );
 void TaskSerial( void *pvParameters );
@@ -199,17 +199,13 @@ void TaskRunControl(void *pvParameters)  // This is a task.
 void TaskInput(void *pvParameters)  // This is a task.
 {
     (void) pvParameters;
-    #define MAX_SUBMENU  4  // 3 menu: Home, Set, View, Calibration
-    enum MenuPos{inNone = 0, inMenu, inSubMenu, inChange} nowPos;
-    byte MenuList[MAX_SUBMENU];   // List menu, contain max of Sub Menu
-    MenuList[0] = 1;    // Home view, Sub menu no item
-    MenuList[1] = 1;    // No sub menu
-    MenuList[2] = 10;    // 10 sub item( 10 position of calibration)
-    byte posSubMenu = 0;   // now position of menu
-    byte posSubItem = 0;   // now position of sub menu
-    int16_t lastEn=0, valueEn=0;
-    encoder = new ClickEncoder(A_PIN,B_PIN,BTN_PIN,4);
-    encoder->setAccelerationEnabled(true);
+    enMenu = new RotatyEncoderMenu(A_PIN,B_PIN,BTN_PIN,4);
+    enMenu->setAccelerationEnabled(true);
+    enMenu->setSubMenu(3);  // Max submenu
+    enMenu->setSubItem(0,1);  // Home view, Sub menu no item
+    enMenu->setSubItem(1,1);  // No sub menu
+    enMenu->setSubItem(2,10); // 10 sub item( 10 position of calibration)
+    menuValue menu;
     cli();
     //set timer2 interrupt at 1kHz
     TCCR2A = 0;// set entire TCCR2A register to 0
@@ -225,51 +221,9 @@ void TaskInput(void *pvParameters)  // This is a task.
     TIMSK2 |= (1 << OCIE2A);    
     sei();
     for(;;){
-        // Process button
-        ClickEncoder::Button b = encoder->getButton();
-        if ((b != ClickEncoder::Open)&&(b==ClickEncoder::Clicked)) {
-            if(nowPos == inNone) nowPos = inMenu;
-            else if(nowPos == inMenu){
-                nowPos = inSubMenu;
-                posSubMenu = 1;
-            }
-            else if(nowPos == inSubMenu){
-                nowPos = inChange;
-                posSubItem = 0;
-            }
-            else if(nowPos == inChange){
-                nowPos = inNone;
-                posSubMenu = 0;
-            }
-        } 
-        // Process Rotaty       
-        valueEn += encoder->getValue();
-        if (valueEn == lastEn) continue;
-        if (nowPos == inNone) { lastEn = valueEn;   continue;};
-        int posDelta = valueEn - lastEn;
-        lastEn = valueEn;
-        if(nowPos == inMenu){
-            posSubMenu = (int)(posSubMenu + posDelta)%MAX_SUBMENU;
-            if(!posSubMenu) posSubMenu=1;
-        }else if(nowPos == inSubMenu){
-            posSubItem = (int)(posSubItem + posDelta)%MenuList[posSubMenu];
-        }else if(nowPos == inChange){
-            int posItemNow = posSubMenu *100 + posSubItem;
-        // user insert function for subItem change at here
-            switch(posItemNow){
-                case 100:
-                // Settemp
-                break;  // mode run
-                case 200:
-                    // View, not change anything
-                break;  // mode run
-                case 300:   // to 310 
-                    // set calibrarion
-                break;  // mode run
-            };
-        };
+        menu = enMenu->getValue();
         vTaskDelay(1);  // one tick delay (30ms) in between reads for stability
     }
 }
-ISR(TIMER2_COMPA_vect){    encoder->service();}
+ISR(TIMER2_COMPA_vect){    enMenu->service();}
 

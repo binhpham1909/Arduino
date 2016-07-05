@@ -1,12 +1,4 @@
 // ----------------------------------------------------------------------------
-// Rotary Encoder Driver with Acceleration
-// Supports Click, DoubleClick, Long Click
-//
-// (c) 2010 karl@pitrich.com
-// (c) 2014 karl@pitrich.com
-// 
-// Timer-based rotary encoder logic by Peter Dannegger
-// http://www.mikrocontroller.net/articles/Drehgeber
 // ----------------------------------------------------------------------------
 
 #include "RotatyEncoderMenu.h"
@@ -181,11 +173,12 @@ void RotatyEncoderMenu::service(void)
 menuValue RotatyEncoderMenu::getValue(void)
 {
 	Button bt = getButton();
-	boolean evt = false;
 	if(bt == Clicked){
-		rtMenu.nowPos++;
-		if(rtMenu.nowPos > inChange)	rtMenu.nowPos = inNone;
-		evt = true;
+		rtMenu.state++;
+		if(rtMenu.state > inChange){
+			rtMenu.state = inNone;
+			waitChange = true;
+		}
 	}
 	int16_t val;
 	cli();
@@ -199,16 +192,24 @@ menuValue RotatyEncoderMenu::getValue(void)
 	int16_t r = 0;
 	int16_t accel = ((accelerationEnabled) ? (acceleration >> 8) : 0);
 	if (val < 0) {
-	r -= 1 + accel;
+		r -= 1 + accel;
 	}
 	else if (val > 0) {
-	r += 1 + accel;
+		r += 1 + accel;
 	}
-	rtMenu.event = evt;
-	
+	rtMenu.event = waitChange;
+	if(rtMenu.state == inSubMenu){
+		posSubMenu = (int)(posSubMenu + r)%MaxSubMenu;
+		if(!posSubMenu) posSubMenu=1;
+	}else if(rtMenu.state == inSubItem){
+		posSubItem = (int)(posSubItem + r)%MenuList[posSubMenu];
+	}else if(rtMenu.state == inChange){
+		rtMenu.value = r;
+	}
+	rtMenu.pos = posSubMenu * 100 + posSubItem;
+	waitChange = false;
 	return rtMenu;
 }
-
 
 void RotatyEncoderMenu::setSubMenu(uint8_t maxSubMenu){
 	MaxSubMenu = maxSubMenu;
@@ -220,12 +221,11 @@ void RotatyEncoderMenu::setSubItem(uint8_t pos,uint8_t maxSubItem){
 // ----------------------------------------------------------------------------
 
 #ifndef WITHOUT_BUTTON
-RotatyEncoderMenu::Button RotatyEncoderMenu::getButton(void)
-{
-  RotatyEncoderMenu::Button ret = button;
-  if (button != RotatyEncoderMenu::Held) {
-    button = RotatyEncoderMenu::Open; // reset
-  }
-  return ret;
+Button getButton(void){
+	Button ret = RotatyEncoderMenu::button;
+	if (RotatyEncoderMenu::button != Held) {
+		RotatyEncoderMenu::button = Open; // reset
+	}
+	return ret;
 }
 #endif

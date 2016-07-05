@@ -1,12 +1,5 @@
 // ----------------------------------------------------------------------------
-// Rotary Encoder Driver with Acceleration
-// Supports Click, DoubleClick, Long Click
-//
-// (c) 2010 karl@pitrich.com
-// (c) 2014 karl@pitrich.com
-// 
-// Timer-based rotary encoder logic by Peter Dannegger
-// http://www.mikrocontroller.net/articles/Drehgeber
+
 // ----------------------------------------------------------------------------
 
 #ifndef __RotatyEncoderMenu_h__
@@ -39,97 +32,72 @@
 
 // ----------------------------------------------------------------------------
 typedef enum menuState_e{
-	inNone = 0;
-	inSubMenu;
-	inSubItem;
-	inChange;
+	inNone = 0,
+	inSubMenu,
+	inSubItem,
+	inChange,
 } menuState;
 typedef struct menuValue_s{
 	boolean event;
-	posMenu state;
+	menuState state;
 	uint16_t pos;
 	uint16_t value;
 } menuValue;
-class RotatyEncoderMenu
-{
-public:
-  typedef enum Button_e {
-    Open = 0,
-    Closed,
-    
-    Pressed,
-    Held,
-    Released,
-    
-    Clicked,
-    DoubleClicked
-    
-  } Button;
-
-public:
-  RotatyEncoderMenu(uint8_t A, uint8_t B, uint8_t BTN = -1, 
-               uint8_t stepsPerNotch = 1, bool active = LOW);
-
-  void service(void);  
-  menuValue getValue(void);
-  void setSubMenu(uint8_t maxSubMenu);
-  void setSubItem(uint8_t maxSubItem);
-
+typedef enum Button_e {
+	Open = 0,
+	Closed,
+	Pressed,
+	Held,
+	Released,
+	Clicked,
+	DoubleClicked
+} Button;
+class RotatyEncoderMenu{
+	public:
+		RotatyEncoderMenu(uint8_t A, uint8_t B, uint8_t BTN = -1, uint8_t stepsPerNotch = 1, bool active = LOW);
+		void service(void);  
+		menuValue getValue(void);
+		void setSubMenu(uint8_t maxSubMenu);
+		void setSubItem(uint8_t pos,uint8_t maxSubItem);
+		void setAccelerationEnabled(const bool &a){
+			accelerationEnabled = a;
+			if (accelerationEnabled == false) {
+				acceleration = 0;
+			}
+		}
+		const bool getAccelerationEnabled() {
+			return accelerationEnabled;
+		}
 #ifndef WITHOUT_BUTTON
-public:
-  Button getButton(void);
+	public:
+		Button getButton(void);
+		void setDoubleClickEnabled(const bool &d){		doubleClickEnabled = d;	}
+		const bool getDoubleClickEnabled(){	return doubleClickEnabled;	}
 #endif
-
-#ifndef WITHOUT_BUTTON
-public:
-  void setDoubleClickEnabled(const bool &d)
-  {
-    doubleClickEnabled = d;
-  }
-
-  const bool getDoubleClickEnabled()
-  {
-    return doubleClickEnabled;
-  }
-#endif
-
-public:
-  void setAccelerationEnabled(const bool &a)
-  {
-    accelerationEnabled = a;
-    if (accelerationEnabled == false) {
-      acceleration = 0;
-    }
-  }
-
-  const bool getAccelerationEnabled() 
-  {
-    return accelerationEnabled;
-  }
-
-private:
-	typedef uint8_t * menuList;
-	menuList MenuList;
-	uint8_t MaxSubMenu;
-	uint8_t posSubMenu;
-	uint8_t posSubItem;
-	menuValue rtMenu;
-	boolean increaseMenu = true; 	// tang me nu ko??
-	const uint8_t pinA;
-	const uint8_t pinB;
-	const uint8_t pinBTN;
-	const bool pinsActive;
-	volatile int16_t delta;
-	volatile int16_t last;
-	uint8_t steps;
-	volatile uint16_t acceleration;
+	private:
+		typedef uint8_t * menuList;
+		menuList MenuList;
+		uint8_t MaxSubMenu;
+		uint8_t posSubMenu;
+		uint8_t posSubItem;
+		menuValue rtMenu;
+		boolean waitChange;
+		
+		const uint8_t pinA;
+		const uint8_t pinB;
+		const uint8_t pinBTN;
+		const bool pinsActive;
+		volatile int16_t delta;
+		volatile int16_t last;
+		uint8_t steps;
+		volatile uint16_t acceleration;
 #if ENC_DECODER != ENC_NORMAL
-	static const int8_t table[16];
+		static const int8_t table[16];
 #endif
 #ifndef WITHOUT_BUTTON
-	volatile Button button;
-	bool doubleClickEnabled;
-	bool accelerationEnabled;
+		volatile Button button;
+		bool doubleClickEnabled;
+		bool accelerationEnabled;
 #endif
 };
 
