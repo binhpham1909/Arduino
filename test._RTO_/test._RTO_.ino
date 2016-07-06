@@ -26,6 +26,7 @@ int ledval = 0;
 
 float insideT, outsideT;
 RotatyEncoderMenu *enMenu;
+int menuIndex;
 
 void TaskReadSensor( void *pvParameters );
 void TaskSerial( void *pvParameters );
@@ -46,11 +47,11 @@ void setup() {
     ,  2  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
     ,  NULL );
     */
-    xTaskCreate( TaskReadSensor,  (const portCHAR *) "ss",  128,  NULL,  1,  NULL );
-    xTaskCreate( TaskSerial,  (const portCHAR *) "se",  128,  NULL,  1,  NULL );
-    xTaskCreate( TaskDisplay,  (const portCHAR *)"lcd",  128,  NULL,  2,  NULL );
-    xTaskCreate( TaskRunControl,  (const portCHAR *)"lcd",  128,  NULL,  2,  NULL );
-    xTaskCreate( TaskInput,  (const portCHAR *)"lcd",  128,  NULL,  2,  NULL );
+    xTaskCreate( TaskReadSensor,  (const portCHAR *) "1",  128,  NULL,  1,  NULL );
+    xTaskCreate( TaskSerial,  (const portCHAR *) "2",  128,  NULL,  1,  NULL );
+    xTaskCreate( TaskDisplay,  (const portCHAR *)"3",  128,  NULL,  2,  NULL );
+    xTaskCreate( TaskRunControl,  (const portCHAR *)"4",  128,  NULL,  2,  NULL );
+    xTaskCreate( TaskInput,  (const portCHAR *)"5",  128,  NULL,  2,  NULL );
 
   // Now the task scheduler, which takes over control of scheduling individual tasks, is automatically started.
 }
@@ -180,8 +181,11 @@ void TaskDisplay(void *pvParameters)  // This is a task.
     for (;;) // A Task shall never return or exit.
     {
         LCD.clear();
-        LCD.setCursor(0,0); LCD.print(F("Set temp:"));   LCD.setCursor(9,0);    LCD.print("");
-        LCD.setCursor(0,1); LCD.print(F("Now temp:"));   LCD.setCursor(9,1);    LCD.print("");
+        if(menuIndex == 0){  // Home
+          LCD.setCursor(0,0); LCD.print(F("Set temp:"));   LCD.setCursor(9,0);    LCD.print("");
+          LCD.setCursor(0,1); LCD.print(F("Now temp:"));   LCD.setCursor(9,1);    LCD.print("");
+        }
+
         vTaskDelay(1);  // one tick delay (30ms) in between reads for stability
     }
 }
@@ -205,7 +209,7 @@ void TaskInput(void *pvParameters)  // This is a task.
     enMenu->setSubItem(0,1);  // Home view, Sub menu no item
     enMenu->setSubItem(1,1);  // No sub menu
     enMenu->setSubItem(2,10); // 10 sub item( 10 position of calibration)
-    menuValue menu;
+    RotatyEncoderMenu::menuValue menu;
     cli();
     //set timer2 interrupt at 1kHz
     TCCR2A = 0;// set entire TCCR2A register to 0
@@ -222,6 +226,12 @@ void TaskInput(void *pvParameters)  // This is a task.
     sei();
     for(;;){
         menu = enMenu->getValue();
+        menuIndex = menu.pos;
+        if(menu.event){
+          if(menu.pos){
+          
+          }  
+        }
         vTaskDelay(1);  // one tick delay (30ms) in between reads for stability
     }
 }

@@ -169,14 +169,31 @@ void RotatyEncoderMenu::service(void)
 }
 
 // ----------------------------------------------------------------------------
-
-menuValue RotatyEncoderMenu::getValue(void)
+void RotatyEncoderMenu::setAccelerationEnabled(const bool &a){
+			accelerationEnabled = a;
+			if (accelerationEnabled == false) {
+				acceleration = 0;
+			}
+}
+const bool RotatyEncoderMenu::getAccelerationEnabled() {
+			return accelerationEnabled;
+}
+// ----------------------------------------------------------------------------
+RotatyEncoderMenu::menuValue RotatyEncoderMenu::getValue(void)
 {
 	Button bt = getButton();
 	if(bt == Clicked){
-		rtMenu.state++;
-		if(rtMenu.state > inChange){
+		if(rtMenu.state == inNone){
+			rtMenu.state = inSubMenu;
+			posSubMenu = 1;
+		}else if(rtMenu.state == inSubMenu){
+			rtMenu.state = inSubItem;
+			posSubItem = 0;
+		}else if(rtMenu.state == inSubItem){
+			rtMenu.state = inChange;
+		}else if(rtMenu.state == inChange){
 			rtMenu.state = inNone;
+			posSubMenu = 0;
 			waitChange = true;
 		}
 	}
@@ -218,10 +235,14 @@ void RotatyEncoderMenu::setSubMenu(uint8_t maxSubMenu){
 void RotatyEncoderMenu::setSubItem(uint8_t pos,uint8_t maxSubItem){
 	MenuList[pos] = maxSubItem;
 }
+void RotatyEncoderMenu::goHome(void){
+	posSubMenu = 0;
+	posSubItem = 0;
+}
 // ----------------------------------------------------------------------------
 
 #ifndef WITHOUT_BUTTON
-Button getButton(void){
+RotatyEncoderMenu::Button RotatyEncoderMenu::getButton(void){
 	Button ret = RotatyEncoderMenu::button;
 	if (RotatyEncoderMenu::button != Held) {
 		RotatyEncoderMenu::button = Open; // reset

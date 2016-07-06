@@ -31,43 +31,39 @@
 #endif
 
 // ----------------------------------------------------------------------------
-typedef enum menuState_e{
-	inNone = 0,
-	inSubMenu,
-	inSubItem,
-	inChange,
-} menuState;
-typedef struct menuValue_s{
-	boolean event;
-	menuState state;
-	uint16_t pos;
-	uint16_t value;
-} menuValue;
-typedef enum Button_e {
-	Open = 0,
-	Closed,
-	Pressed,
-	Held,
-	Released,
-	Clicked,
-	DoubleClicked
-} Button;
+
 class RotatyEncoderMenu{
+	public:
+		typedef enum menuState_e{
+			inNone = 0,
+			inSubMenu,
+			inSubItem,
+			inChange,
+		} menuState;
+		typedef struct menuValue_s{
+			boolean event;
+			menuState state;
+			uint16_t pos;
+			uint16_t value;
+		} menuValue;
+		typedef enum Button_e {
+			Open = 0,
+			Closed,
+			Pressed,
+			Held,
+			Released,
+			Clicked,
+			DoubleClicked
+		} Button;	
 	public:
 		RotatyEncoderMenu(uint8_t A, uint8_t B, uint8_t BTN = -1, uint8_t stepsPerNotch = 1, bool active = LOW);
 		void service(void);  
 		menuValue getValue(void);
 		void setSubMenu(uint8_t maxSubMenu);
 		void setSubItem(uint8_t pos,uint8_t maxSubItem);
-		void setAccelerationEnabled(const bool &a){
-			accelerationEnabled = a;
-			if (accelerationEnabled == false) {
-				acceleration = 0;
-			}
-		}
-		const bool getAccelerationEnabled() {
-			return accelerationEnabled;
-		}
+		void goHome(void);
+		void setAccelerationEnabled(const bool &a);
+		const bool getAccelerationEnabled() ;
 #ifndef WITHOUT_BUTTON
 	public:
 		Button getButton(void);
