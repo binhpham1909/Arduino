@@ -19,6 +19,10 @@
 #define B_PIN 3
 #define BTN_PIN 4
 
+// EEPROM save
+#define R_SETTEMP 10
+
+
 int ErrorCode;
 int ledval = 0;
 // define two tasks for Blink & AnalogRead
@@ -27,6 +31,8 @@ int ledval = 0;
 float insideT, outsideT;
 RotatyEncoderMenu *enMenu;
 int menuIndex;
+float setTemp, nowTemp, newSetTemp;
+int deltaCalib[10];
 
 void TaskReadSensor( void *pvParameters );
 void TaskSerial( void *pvParameters );
@@ -76,7 +82,7 @@ void TaskReadSensor(void *pvParameters)  // This is a task.
     }else{
         Serial.print(F("SS1 addr= "));
         for(byte i = 0; i < 8; i++) {
-            Serial.write(" ");
+            Serial.print(F(" "));
             Serial.print(addr1[i], HEX);
         }
         Serial.println(F("."));
@@ -88,12 +94,12 @@ void TaskReadSensor(void *pvParameters)  // This is a task.
     }else{
         Serial.print(F("SS2 addr= "));
         for(byte i = 0; i < 8; i++) {
-            Serial.write(" ");
+            Serial.print(F(" "));
             Serial.print(addr2[i], HEX);
         }
         Serial.println(F("."));
     }
-    for (;err==0;)
+    for (;;)
     {
         byte data1[2], data2[2];
         ds1.reset();
@@ -132,39 +138,34 @@ void TaskSerial(void *pvParameters)  // This is a task.
     Serial.begin(115200);
     String serialInput="";
     boolean serialComplete = false;
-    while(true) // A Task shall never return or exit.
+    for(;;) // A Task shall never return or exit.
     {
         while (!serialComplete&&Serial.available()) {
-            // get the new byte:
             char inChar = (char)Serial.read();
-            // add it to the inputString:
             serialInput += inChar;
-            // if the incoming character is a newline, set a flag
-            // so the main loop can do something about it:
-            if (inChar == '\n') {
-                serialComplete = true;
-            }
+            if (inChar == '\n') serialComplete = true;
+            if(!serialComplete) vTaskDelay(1);  // one tick delay (30ms) in between reads for stability
         }
-    if(!serialComplete)  {
-        vTaskDelay(1);  // one tick delay (30ms) in between reads for stability
-        continue;
-    }
-    int startS = serialInput.indexOf('>');
-    int sepS = serialInput.indexOf(':');
-    int endS = serialInput.indexOf('\n');
-    char br = '"';
-    char se = ':';
-    char ne = ',';
-    char op = '{';
-    char cl = '}';
-    String comma = serialInput.substring(startS+1,sepS);
-    String val = serialInput.substring(sepS + 1, endS);
-    int comm = comma.toInt();
-//    Serial.println(comm);
-//    Serial.println(val);
-    serialInput = "";
-    serialComplete = false;
-    vTaskDelay(1);  // one tick delay (30ms) in between reads for stability};
+        if(!serialComplete){
+            vTaskDelay(1);  // one tick delay (30ms) in between reads for stability
+            continue;
+        }
+        // String giao tiep: {key}={val}
+        String key;
+        String val;
+        int startS = serialInput.indexOf('{',0);
+        int endS = serialInput.indexOf('}',startS+1);
+        key = serialInput.substring(startS+1,endS);
+        startS = serialInput.indexOf('{', endS+1);
+        endS = serialInput.indexOf('}', startS+1);
+        val = serialInput.substring(startS + 1, endS);
+        int comm = key.toInt();
+        // process key-command at here
+            Serial.println(comm);
+            Serial.println(val);
+        serialInput = "";
+        serialComplete = false;
+        vTaskDelay(1);  // one tick delay (30ms) in between reads for stability};
   }
 }
 void TaskDisplay(void *pvParameters)  // This is a task.
@@ -181,11 +182,18 @@ void TaskDisplay(void *pvParameters)  // This is a task.
     for (;;) // A Task shall never return or exit.
     {
         LCD.clear();
-        if(menuIndex == 0){  // Home
-          LCD.setCursor(0,0); LCD.print(F("Set temp:"));   LCD.setCursor(9,0);    LCD.print("");
-          LCD.setCursor(0,1); LCD.print(F("Now temp:"));   LCD.setCursor(9,1);    LCD.print("");
+        if((int)(menuIndex/100) == 0){  // Home
+          LCD.setCursor(0,0); LCD.print(F("Set temp:"));   LCD.setCursor(9,0);    LCD.print(setTemp,1);
+          LCD.setCursor(0,1); LCD.print(F("Now temp:"));   LCD.setCursor(9,1);    LCD.print(nowTemp,1);
+        }else if((int)(menuIndex/100) == 1){
+          LCD.setCursor(0,0); LCD.print(F("Set temp:"));   LCD.setCursor(9,0);    LCD.print(newSetTemp,1);          
+        }else if((int)(menuIndex/100) == 2){
+          LCD.setCursor(0,0); LCD.print(F("Now sensor temp:"));   LCD.setCursor(9,1);    LCD.print(insideT,1);          
+        }else if((int)(menuIndex/100) == 3){
+          byte indexCal = (byte)(menuIndex%100);
+          LCD.setCursor(0,0); LCD.print(F("Calib at: "));   LCD.setCursor(9,0);   LCD.print(indexCal);    LCD.print(F(" C"));
+          LCD.setCursor(0,0); LCD.print(F("Delta: "));   LCD.setCursor(9,1);    LCD.print(deltaCalib[indexCal]/100,2);          
         }
-
         vTaskDelay(1);  // one tick delay (30ms) in between reads for stability
     }
 }
@@ -228,9 +236,14 @@ void TaskInput(void *pvParameters)  // This is a task.
         menu = enMenu->getValue();
         menuIndex = menu.pos;
         if(menu.event){
-          if(menu.pos){
-          
-          }  
+          if((int)(menuIndex/100)==1){
+              newSetTemp = setTemp + menu.value;
+              EEPROM.put(R_SETTEMP, newSetTemp);
+              enMenu->goHome();
+          }else if((int)(menuIndex/100)==2){
+              byte indexCal = (byte)(menuIndex%100);
+              
+          }
         }
         vTaskDelay(1);  // one tick delay (30ms) in between reads for stability
     }
