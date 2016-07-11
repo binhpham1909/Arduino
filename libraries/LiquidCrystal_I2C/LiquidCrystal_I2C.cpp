@@ -1,11 +1,4 @@
-//YWROBOT
-//last updated on 21/12/2011
-//Tim Starling Fix the reset bug (Thanks Tim)
-//wiki doc http://www.dfrobot.com/wiki/index.php?title=I2C/TWI_LCD1602_Module_(SKU:_DFR0063)
-//Support Forum: http://www.dfrobot.com/forum/
-//Compatible with the Arduino IDE 1.0
-//Library version:1.1
-
+// Based on the work by DFRobot
 
 #include "LiquidCrystal_I2C.h"
 #include <inttypes.h>
@@ -16,7 +9,7 @@
 #define printIIC(args)	Wire.write(args)
 inline size_t LiquidCrystal_I2C::write(uint8_t value) {
 	send(value, Rs);
-	return 0;
+	return 1;
 }
 
 #else
@@ -218,6 +211,15 @@ void LiquidCrystal_I2C::createChar(uint8_t location, uint8_t charmap[]) {
 	command(LCD_SETCGRAMADDR | (location << 3));
 	for (int i=0; i<8; i++) {
 		write(charmap[i]);
+	}
+}
+
+//createChar with PROGMEM input
+void LiquidCrystal_I2C::createChar(uint8_t location, const char *charmap) {
+	location &= 0x7; // we only have 8 locations 0-7
+	command(LCD_SETCGRAMADDR | (location << 3));
+	for (int i=0; i<8; i++) {
+	    	write(pgm_read_byte_near(charmap++));
 	}
 }
 
