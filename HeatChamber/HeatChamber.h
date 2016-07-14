@@ -5,20 +5,24 @@
 #include <RotatyEncoderMenu.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <OneWire.h>
+#include <BDS18B20.h>
+#include <BTone.h>
+#include <EEPROM.h>
 
 // Device global
-#define B_DV_NAME   F("Hello")
+#define B_DV_NAME   F("Heat Chamber")
 #define B_COMPANY   F("HBInvent")
 boolean err=0;
-float setTemp, nowTemp, newSetTemp;
-int deltaCalib[10];
+
 int ErrorCode;
 int ledval = 0;
-//Serial
 
-String serialInput="";
-boolean serialComplete = false;
+float realTemp(float x, int ca[10])
+{
+    int id = (int) (x/10);
+//    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    return (x - (float)id*10) * (10 + (float)ca[id+1]/100 - (float)ca[id]/100) / 10 + id*10 + (float)ca[id]/100;
+}
 
 // Relay
 #define BAT(X) digitalWrite(X, LOW)  
@@ -28,95 +32,45 @@ boolean serialComplete = false;
 #define COOLER_VAL_PIN 7
 #define FAN_PIN 7
 #define BELL_PIN 7
+// System init
+#define SETTEMP_ADDR    10  // 4byte
+#define START_CALIB_ADDR    14
+float setTemp, nowTemp;
+int Calib[10];
+void InitSystem(void){
+    EEPROM.get(SETTEMP_ADDR, setTemp);
+    int range = (int)(setTemp/10);
+    for(int i=0; i<10; i++){
+        EEPROM.get(START_CALIB_ADDR + i*2, Calib[i]);
+    }
+}
+// Speaker
+BTone spk(BELL_PIN);
 
 // Sensor 
 #define INSIDE_PIN 14
 #define OUTSIDE_PIN 15
 
 float insideT, outsideT;
-OneWire ds1(INSIDE_PIN);   // inside
-OneWire ds2(OUTSIDE_PIN);   // outside
-byte addr1[8];
-byte addr2[8];
-byte data1[2], data2[2];
+BDS18B20 ds1(INSIDE_PIN);   // inside
+BDS18B20 ds2(OUTSIDE_PIN);   // inside
 
-byte TaskReadSensorStep=0;
-uint32_t TaskReadSensorNextTime, TaskReadSensorLastTime;
 void InitSensor(void){
-    if ( !ds1.search(addr1)) {
-        ErrorCode = 11;
-        Serial.println(F("Inside SS Err"));
-        err=1;
-    }else{
-        Serial.print(F("SS1 addr= "));
-        for(byte i = 0; i < 8; i++) {
-            Serial.print(F(" "));
-            Serial.print(addr1[i], HEX);
-        }
-        Serial.println(F("."));
-    }
-    if ( !ds2.search(addr2)) {
-        ErrorCode = 12;
-        Serial.println(F("Outside SS Err"));
-        err=1;
-    }else{
-        Serial.print(F("SS2 addr= "));
-        for(byte i = 0; i < 8; i++) {
-            Serial.print(F(" "));
-            Serial.print(addr2[i], HEX);
-        }
-        Serial.println(F("."));
-    }
+    ds1.init();
+    ds2.init();
 };
-void TaskReadSensor(void)  // This is a task.
-{
-    if((millis()-TaskReadSensorLastTime)<TaskReadSensorNextTime) return;
-    if(TaskReadSensorStep==0){
-        ds1.reset();
-        ds1.select(addr1);
-        ds1.write(0x44); // start conversion, read temperature and store it in the scratchpad
-        ds2.reset();
-        ds2.select(addr2);
-        ds2.write(0x44); // start conversion, read temperature and store it in the scratchpad
-        
-        TaskReadSensorLastTime = millis();  
-        TaskReadSensorNextTime = 450;  // wait for convertion    
-        TaskReadSensorStep++;
-    }else if(TaskReadSensorStep==1){
-        byte present = ds1.reset();  //now we can read the temp sensor data
-        ds1.select(addr1);
-        ds1.write(0xBE); // Read Scratchpad
-        for (int i = 0; i < 2; i++) { // Only read the bytes you need? there is more there
-            data1[i] = ds1.read();
-        }
-        present = ds2.reset();  //now we can read the temp sensor data
-        ds2.select(addr2);
-        ds2.write(0xBE); // Read Scratchpad
-        for (int i = 0; i < 2; i++) { // Only read the bytes you need? there is more there
-            data2[i] = ds2.read();
-        }
-        byte MSB = data1[1];
-        byte LSB = data1[0];
-        float tempRead = ((MSB << 8) | LSB); //using two’s compliment
-        insideT = tempRead / 16; //this converts to C
-        MSB = data2[1];
-        LSB = data2[0];
-        tempRead = ((MSB << 8) | LSB); //using two’s compliment
-        outsideT = tempRead / 16; //this converts to C 
-            
-        TaskReadSensorLastTime = millis();  
-        TaskReadSensorNextTime = 0;      
-        TaskReadSensorStep=0;  
-    }
+void TaskReadSensor(void){  // This is a task.
+    insideT = ds1.readTemp();
+    nowTemp = realTemp(insideT,Calib);
+    outsideT = ds2.readTemp();
 };
 // Rotaty Encoder PIN
 #define A_PIN 2
 #define B_PIN 3
 #define BTN_PIN 4
-
+uint16_t lastMenuIndex,menuIndex;
 RotatyEncoderMenu *enMenu;
-RotatyEncoderMenu::menuValue menu;
-int menuIndex,lastMenuIndex;
+RotatyEncoderMenu::menuState stt;
 void InitREncoder(){
     cli();
     //set timer2 interrupt at 1kHz
@@ -128,26 +82,34 @@ void InitREncoder(){
     TCCR2B |= (1 << CS22);   // Set CS21 bit for 64 prescaler
     TIMSK2 |= (1 << OCIE2A);    // enable timer compare interrupt
     sei();
-    enMenu = new RotatyEncoderMenu(A_PIN,B_PIN,BTN_PIN,4);
+    enMenu = new RotatyEncoderMenu(4,A_PIN,B_PIN,BTN_PIN,4);
     enMenu->setAccelerationEnabled(true);
-    enMenu->setSubMenu(3);  // Max submenu
     enMenu->setSubItem(0,1);  // Home view, Sub menu no item
     enMenu->setSubItem(1,1);  // No sub menu
-    enMenu->setSubItem(2,10); // 10 sub item( 10 position of calibration)
+    enMenu->setSubItem(2,1);  // No sub menu
+    enMenu->setSubItem(3,10); // 10 sub item( 10 position of calibration)
+    enMenu->goHome();
 };
 void TaskInput(void)  // This is a task.
 {
-    menu = enMenu->getValue();
-    menuIndex = menu.pos;
-    if(menu.event){
-      if((int)(menuIndex/100)==1){
-          newSetTemp = setTemp + menu.value;
-//              EEPROM.put(R_SETTEMP, newSetTemp);
-          enMenu->goHome();
-      }else if((int)(menuIndex/100)==2){
-          byte indexCal = (byte)(menuIndex%100);
-          
-      }
+    boolean inEvt = enMenu->update();
+    menuIndex = enMenu->getMenuPos();
+    stt = enMenu->getMenuState();
+    if(inEvt){
+        Serial.print(F("evt: "));  Serial.println(inEvt);
+        Serial.print(F("Pos Menu: "));  Serial.println(menuIndex);
+        Serial.print(F("Delta: "));  Serial.println(enMenu->getValueChange());
+        if(menuIndex==100){
+            setTemp = setTemp + (float)(enMenu->getValueChange())/10;
+            EEPROM.put(SETTEMP_ADDR, setTemp);
+            InitSystem();
+        }else if((int)(menuIndex/100) == 3){
+            byte indexCal = (byte)(menuIndex%100);
+            Calib[indexCal] = Calib[indexCal] + enMenu->getValueChange();
+            EEPROM.put(START_CALIB_ADDR + indexCal*2, Calib[indexCal]);
+            InitSystem();
+        }
+        enMenu->goHome();
     }
 }
 
@@ -175,15 +137,18 @@ void TaskDisplay(void)  // This is a task.
     LCD.home();
     if((int)(menuIndex/100) == 0){  // Home
       LCD.setCursor(0,0); LCD.print(F("Set temp:"));   LCD.setCursor(10,0);    LCD.print(setTemp,1);
-      LCD.setCursor(0,1); LCD.print(F("Now temp:"));   LCD.setCursor(10,1);    LCD.print(insideT,1);
+      LCD.setCursor(0,1); LCD.print(F("Now temp:"));   LCD.setCursor(10,1);    LCD.print(nowTemp,1);
+      if(stt==RotatyEncoderMenu::inChange)   LCD.blink(); else LCD.noBlink();
     }else if((int)(menuIndex/100) == 1){
-      LCD.setCursor(0,0); LCD.print(F("Set temp:"));   LCD.setCursor(10,0);    LCD.print(newSetTemp,1);          
+      LCD.setCursor(0,0); LCD.print(F("Set temp:"));   LCD.setCursor(10,0);    LCD.print(setTemp + (float)(enMenu->getValueChange())/10,1); 
+      if(stt==RotatyEncoderMenu::inChange)   LCD.blink(); else LCD.noBlink();
     }else if((int)(menuIndex/100) == 2){
       LCD.setCursor(0,0); LCD.print(F("Now sensor temp:"));   LCD.setCursor(9,1);    LCD.print(insideT,1);          
     }else if((int)(menuIndex/100) == 3){
       byte indexCal = (byte)(menuIndex%100);
-      LCD.setCursor(0,0); LCD.print(F("Calib at: "));   LCD.setCursor(9,0);   LCD.print(indexCal);    LCD.print(F(" C"));
-      LCD.setCursor(0,0); LCD.print(F("Delta: "));   LCD.setCursor(9,1);    LCD.print(deltaCalib[indexCal]/100,2);          
+      LCD.setCursor(0,0); LCD.print(F("Calib at: "));   LCD.setCursor(9,0);   LCD.print(indexCal*10);    LCD.print(F(" C"));
+      LCD.setCursor(0,1); LCD.print(F("Delta: "));   LCD.setCursor(9,1);    LCD.print(Calib[indexCal]+enMenu->getValueChange());
+      if(stt==RotatyEncoderMenu::inChange)   LCD.blink(); else LCD.noBlink();          
     }
     lastMenuIndex = menuIndex;
 }

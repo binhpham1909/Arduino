@@ -3,23 +3,34 @@
 void setup() {
     Serial.begin(115200);
     Serial.println(B_DV_NAME);
+    InitSystem();
     InitDisplay();
     InitSensor();
     InitREncoder();
 }
-ISR(TIMER2_COMPA_vect){    enMenu->service();}
+ISR(TIMER2_COMPA_vect){   
+    enMenu->service();
+    spk.service();
+}
 void loop(){
     TaskSerial();
     TaskReadSensor();
     TaskRunControl();
     TaskDisplay();
-//    TaskInput();
+    TaskInput();
+//    pinMode(HEATER_PIN, OUTPUT);  TAT(LIGHT_PIN);
+//    pinMode(COOLER_PIN, OUTPUT); TAT(PUMP_PIN); 
+//    pinMode(COOLER_VAL_PIN, OUTPUT); TAT(PUMP_PIN);  
+//    pinMode(FAN_PIN, OUTPUT); BAT(PUMP_PIN);    
+//    pinMode(BELL_PIN, OUTPUT); BAT(BELL_PIN); 
 }
 
 /*--------------------------------------------------*/
 /*---------------------- Tasks ---------------------*/
 /*--------------------------------------------------*/
 
+String serialInput="";
+boolean serialComplete = false;
 void TaskSerial(void)  // This is a task.
 {
     while (!serialComplete&&Serial.available()) {
@@ -50,11 +61,7 @@ void hanlerSCmd(int& cmd, String& val){
 };
 void TaskRunControl(void)  // This is a task.
 {
-//    pinMode(HEATER_PIN, OUTPUT);  TAT(LIGHT_PIN);
-//    pinMode(COOLER_PIN, OUTPUT); TAT(PUMP_PIN); 
-//    pinMode(COOLER_VAL_PIN, OUTPUT); TAT(PUMP_PIN);  
-//    pinMode(FAN_PIN, OUTPUT); BAT(PUMP_PIN);    
-//   pinMode(BELL_PIN, OUTPUT); BAT(BELL_PIN); 
+
 
 }
 
