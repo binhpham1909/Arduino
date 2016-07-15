@@ -3,10 +3,14 @@
 void setup() {
     Serial.begin(115200);
     Serial.println(B_DV_NAME);
-    InitSystem();
+    readEEPROM();
     InitDisplay();
-    InitSensor();
     InitREncoder();
+    ACPWM.SetMode(AUTOMATIC);
+//    pinMode(HEATER_PIN, OUTPUT);  TAT(LIGHT_PIN);
+    pinMode(COOLER_PIN, OUTPUT); TAT_RELAY(COOLER_PIN); 
+    pinMode(COOLER_VAL_PIN, OUTPUT); TAT_RELAY(COOLER_VAL_PIN);  
+    pinMode(FAN_PIN, OUTPUT); BAT_RELAY(FAN_PIN);    
 }
 ISR(TIMER2_COMPA_vect){   
     enMenu->service();
@@ -18,11 +22,7 @@ void loop(){
     TaskRunControl();
     TaskDisplay();
     TaskInput();
-//    pinMode(HEATER_PIN, OUTPUT);  TAT(LIGHT_PIN);
-//    pinMode(COOLER_PIN, OUTPUT); TAT(PUMP_PIN); 
-//    pinMode(COOLER_VAL_PIN, OUTPUT); TAT(PUMP_PIN);  
-//    pinMode(FAN_PIN, OUTPUT); BAT(PUMP_PIN);    
-//    pinMode(BELL_PIN, OUTPUT); BAT(BELL_PIN); 
+//    Serial.println(getMemoryFree());
 }
 
 /*--------------------------------------------------*/
@@ -40,16 +40,9 @@ void TaskSerial(void)  // This is a task.
     }
     if(!serialComplete) return;
     // String giao tiep: {key}={val}
-    String key;
     String val;
-    int startS = serialInput.indexOf('{',0);
-    int endS = serialInput.indexOf('}',startS+1);
-    key = serialInput.substring(startS+1,endS);
-    startS = serialInput.indexOf('{', endS+1);
-    endS = serialInput.indexOf('}', startS+1);
-    val = serialInput.substring(startS + 1, endS);
-    int comm = key.toInt();
-    hanlerSCmd(comm, val);
+    int key = deValue(serialInput, val);
+    hanlerSCmd(key, val);
     // process key-command at here
    //     Serial.println(comm);
     //    Serial.println(val);
@@ -57,12 +50,31 @@ void TaskSerial(void)  // This is a task.
     serialComplete = false;
 }
 void hanlerSCmd(int& cmd, String& val){
-    
+    if(cmd == 1001){
+        
+    }
 };
-void TaskRunControl(void)  // This is a task.
-{
-
-
+#define deltaON 0.2 
+boolean refrigMode;
+void TaskRunControl(void){  // This is a task.
+    if(!refrigMode&&(outsideT > setTemp+deltaON)){
+        refrigMode = true;
+        BAT_RELAY(COOLER_PIN);
+    }else if(refrigMode&&(outsideT < setTemp-deltaON)){
+        refrigMode = false;
+        TAT_RELAY(COOLER_PIN);
+    };
+    if(!refrigMode){
+        ACPWM.Compute();
+//        Serial.println(PIDOutPut);
+        analogWrite(HEATER_PIN,PIDOutPut);    
+    }else{
+        if(setTemp > nowTemp){
+            TAT_RELAY(COOLER_VAL_PIN);
+        }else{
+            BAT_RELAY(COOLER_VAL_PIN);
+        }
+    }
 }
 
 

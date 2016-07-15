@@ -17,7 +17,7 @@
 
 class BDS18B20: public OneWire{
 	public:
-		BDS18B20(uint8_t pin):OneWire( pin){};
+		BDS18B20(uint8_t pin):OneWire( pin){	init();};
 		boolean init(void);
 		float readTemp(void);
 	private:
