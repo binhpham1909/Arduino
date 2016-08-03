@@ -18,14 +18,16 @@
 class BDS18B20: public OneWire{
 	public:
 		BDS18B20(uint8_t pin):OneWire( pin){	init();};
-		boolean init(void);
+		void init(void);
 		float readTemp(void);
+		boolean getError(void);
 	private:
 		byte Addr[8];
 		byte Data[2];
 		byte ReadSensorStep=0;
 		float LastTemp;
 		uint32_t WaitTime, LastRead;
+		boolean _err=false;
 };
 
 // ----------------------------------------------------------------------------

@@ -25,9 +25,11 @@ class RotatyEncoderMenu: public ClickEncoder{
 			inWaitChange,
 		} menuState;
 	public:
-		RotatyEncoderMenu(uint8_t maxSubMenu, uint8_t A, uint8_t B, uint8_t BTN = -1, uint8_t stepsPerNotch = 1, bool active = LOW):ClickEncoder(A, B, BTN, stepsPerNotch, active){
+		RotatyEncoderMenu(uint8_t maxSubMenu, uint8_t A, uint8_t B, uint8_t SPK, uint8_t BTN = -1, uint8_t stepsPerNotch = 1, bool active = LOW):ClickEncoder(A, B, BTN, stepsPerNotch, active){
 			MAX_SUBMENU = maxSubMenu;
-			menu = new uint8_t[MAX_SUBMENU];};
+			menu = new uint8_t[MAX_SUBMENU];
+			_spkPin = SPK;
+		};
 		void setSubItem(uint8_t subMenu, uint8_t maxItem);
 		boolean update(void);
 		uint16_t getMenuPos(void){ return (posSubMenu*100+posSubItem);};
@@ -40,6 +42,7 @@ class RotatyEncoderMenu: public ClickEncoder{
 		uint8_t *menu;
 		uint8_t posSubMenu;
 		uint8_t posSubItem;
+		uint8_t _spkPin;
 		int16_t lastEn;
 };
 

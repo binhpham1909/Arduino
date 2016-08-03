@@ -2,10 +2,11 @@
 // ----------------------------------------------------------------------------
 
 #include "BDS18B20.h"
-boolean BDS18B20::init(void){
+void BDS18B20::init(void){
 	if ( !search(Addr)) {
-		Serial.println(F("Inside SS Err"));
-        return false;
+		Serial.println(F("Temp Sensor Err"));
+		_err = true;
+        return;
     }else{
         Serial.print(F("SS Addr= "));
         for(byte i = 0; i < 8; i++) {
@@ -13,10 +14,11 @@ boolean BDS18B20::init(void){
             Serial.print(Addr[i], HEX);
         }
         Serial.println(F("."));
-		
-		return true;
     }
 };
+boolean BDS18B20::getError(void){
+	return _err;
+}
 float BDS18B20::readTemp(){
     if((millis()-LastRead)<WaitTime) return LastTemp;
     if(ReadSensorStep==0){

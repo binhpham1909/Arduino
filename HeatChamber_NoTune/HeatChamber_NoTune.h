@@ -1,5 +1,5 @@
-#ifndef HeatChamber_h
-#define HeatChamber_h
+#ifndef HeatChamber_NoTune_h
+#define HeatChamber_NoTune_h
 
 #include <avr/pgmspace.h>
 #include <RotatyEncoderMenu.h>
@@ -43,6 +43,7 @@ boolean _refrigMode;
 uint32_t _lastCoolerOn, _lastHeaterOn;
 double _startTemp, _setTemp, _nowTemp = 0;
 double Calib[10];
+double _PIDK[3];
 
 // PID
 #define WINDOWS_SIZE 5000    // PWM for relay, control by compare stick bitween time windows size
@@ -51,19 +52,16 @@ int _countHPID, _countCPID; // , windows size 2550 ms, count: counter 1ms/1step,
 boolean _onPWM, _onCPID;
 boolean _inChangeHPID = false, _inChangeCPID = false;
 double _outHPID, _outCPID, _breakHPID, _breakCPID;
-boolean _tuning = false;    // auto tune
-byte _HPIDMode = 2;
-double _HKp=2, _HKi=0.5, _HKd=3;
-double _CKp=2, _CKi=0.5, _CKd=3;
+double _HKp=2, _HKi=5, _HKd=5;
+double _CKp=2, _CKi=5, _CKd=5;
 
 PID HPID(&_nowTemp, &_outHPID, &_setTemp, _HKp, _HKi, _HKd, DIRECT);  // PID for heater;
-PID_ATune aTune(&_nowTemp, &_outHPID);  // Auto Tune heater PID
 PID CPID(&_nowTemp, &_outCPID, &_setTemp, _CKp, _CKi, _CKd, DIRECT);   // PID for cooler, used VAL is Direct,
 
 // EEPROM to save calib and settemp
 #define SETTEMP_ADDR    10  // 4 byte ~ float settemp address   
 #define START_CALIB_ADDR    14  // 4 byte ~ float x 10 points calib address  
-
+#define START_HPID_ADDR    54  // 4 byte ~ float x 3 points calib address  
 // Sensor 
 double insideT, outsideT;
 BDS18B20 ds1(INSIDE_PIN);   // inside
@@ -113,6 +111,14 @@ void readEEPROM(void){
     for(int i=0; i<10; i++){
         EEPROM.get(START_CALIB_ADDR + i*4, Calib[i]);
     }
+    for(int i=0; i<3; i++){
+        EEPROM.get(START_HPID_ADDR + i*4, _PIDK[i]);
+        if(isnan(_PIDK[i])){
+            _PIDK[i] = 0;
+            EEPROM.put(START_HPID_ADDR + i*4, _PIDK[i]);
+            EEPROM.get(START_HPID_ADDR + i*4, _PIDK[i]);
+        }
+    }
 }
 
 void InitREncoder(){
@@ -137,12 +143,16 @@ void InitREncoder(){
     enMenu->setSubItem(1,1);  // No sub menu
     enMenu->setSubItem(2,1);  // No sub menu
     enMenu->setSubItem(3,10); // 10 sub item( 10 position of calibration)
-    enMenu->setSubItem(4,1);  // No sub menu
+    enMenu->setSubItem(4,3);  // No sub menu
     enMenu->goHome();
 };
 
 void InitDisplay(void){
+    byte _arrow[8] = {B10000, B01000, B00100, B00010, B00010, B00100, B01000, B10000};
+    byte _blank[8] = {B00000, B00000, B00000, B00000, B00000, B00000, B00000, B00000};
     LCD.init();                      // initialize the lcd
+    LCD.createChar(0,_blank);
+    LCD.createChar(1,_arrow);
     LCD.clear();  // Reset the display  
     LCD.backlight();  //Backlight ON if under program control 
     LCD.home(); LCD.print(B_COMPANY);
@@ -152,11 +162,9 @@ void InitDisplay(void){
 };
 
 void TaskReadSensor(void){  // This is a task.
-    insideT = random(30, 40);
-    outsideT = 30;
- //   insideT = ds1.readTemp();
+    insideT = ds1.readTemp();
     _nowTemp = map(insideT,Calib);
-//    outsideT = ds2.readTemp();
+    outsideT = ds2.readTemp();
 };
 
 void TaskInput(void)  // This is a task.
@@ -172,18 +180,18 @@ void TaskInput(void)  // This is a task.
         if(menuIndex==100){
             _setTemp = _setTemp + (double)(enMenu->getValueChange())/10;
             EEPROM.put(SETTEMP_ADDR, _setTemp);
-            readEEPROM();
         }else if((int)(menuIndex/100) == 3){
             byte indexCal = (byte)(menuIndex%100);
             Calib[indexCal] = Calib[indexCal] + (double)(enMenu->getValueChange())/100;
             EEPROM.put(START_CALIB_ADDR + indexCal*4, Calib[indexCal]);
-            readEEPROM();
+        }else if((int)(menuIndex/100) == 4){
+            byte indexK = (byte)(menuIndex%100);
+            _PIDK[indexK] = _PIDK[indexK] + (double)(enMenu->getValueChange())/10;
+            EEPROM.put(START_HPID_ADDR + indexK*4, _PIDK[indexK]);
         }
         enMenu->goHome();
     }
 }
- 
-
 
 void TaskDisplay(void)  // This is a task.
 {
@@ -221,9 +229,23 @@ void TaskDisplay(void)  // This is a task.
         LCD.setCursor(0,0); LCD.print(F("Calib at: "));   LCD.setCursor(9,0);   LCD.print(indexCal*10);    LCD.print(F(" C"));
         LCD.setCursor(0,1); LCD.print(F("Delta: "));   LCD.setCursor(9,1);    LCD.print(Calib[indexCal]+(double)(enMenu->getValueChange())/100,2);
         if(stt==RotatyEncoderMenu::inChange)   LCD.blink(); else LCD.noBlink();          
-    }else if((int)(menuIndex/100) == 4){ 
-        LCD.setCursor(0,0);     LCD.print(_HKp,1);    LCD.setCursor(5,0); LCD.print(_HKi,1);   LCD.setCursor(10,0);    LCD.print(_HKd,2);
-        LCD.setCursor(0,1);     LCD.print(_nowTemp,2);  LCD.setCursor(8,1); LCD.print(_outHPID,1);
+    }else if((int)(menuIndex/100) == 4){
+        byte indexK = (byte)(menuIndex%100);
+        int nowSec = (int) (millis()/1000);
+        LCD.clear();
+        LCD.setCursor(0,0); if((indexK == 0)&&(stt==RotatyEncoderMenu::inChange)){LCD.print(char(1));}   LCD.setCursor(1,0);     LCD.print(_PIDK[0],2);
+        LCD.setCursor(8,0); if((indexK == 1)&&(stt==RotatyEncoderMenu::inChange)){LCD.print(char(1));}   LCD.setCursor(9,0);     LCD.print(_PIDK[1],2);   
+        LCD.setCursor(0,1); if((indexK == 2)&&(stt==RotatyEncoderMenu::inChange)){LCD.print(char(1));}   LCD.setCursor(1,1);     LCD.print(_PIDK[2],2);
+        LCD.setCursor(9,1); 
+        if((nowSec%2)==0){
+            LCD.print("I");
+            LCD.setCursor(10,1);
+            LCD.print(_nowTemp,2);
+        }else{
+            LCD.print("O");
+            LCD.setCursor(10,1);
+            LCD.print(_outHPID,2);            
+        }
     }
     lastMenuIndex = menuIndex;
 }
@@ -255,29 +277,5 @@ void TaskCheckError( void ){
     }
 };
 // Task
-
-void changeAutoTune(){
-    if(!_tuning){
-        //Set the output to the desired starting frequency.
-        _outHPID = 2000;   // set start value for PID output
-        aTune.SetControlType(1);    // 0: PI, 1: PID
-        aTune.SetNoiseBand(1);
-        aTune.SetOutputStep(50);
-        aTune.SetLookbackSec(20);
-        AutoTuneHelper(true);
-        _tuning = true;
-    }else{ //cancel autotune
-        aTune.Cancel();
-        _tuning = false;
-        AutoTuneHelper(false);
-    }
-}
-void AutoTuneHelper(boolean start)
-{
-  if(start)
-    _HPIDMode = HPID.GetMode();
-  else
-    HPID.SetMode(_HPIDMode);
-}
 
 #endif

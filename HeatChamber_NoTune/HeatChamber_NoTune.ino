@@ -1,4 +1,4 @@
-#include "HeatChamber.h"
+#include "HeatChamber_NoTune.h"
 // the setup function runs once when you press reset or power the board
 
 void setup() {
@@ -14,11 +14,6 @@ void setup() {
     pinMode(HEATER_PIN, OUTPUT);  TAT_RELAY(HEATER_PIN);
     pinMode(COOLER_PIN, OUTPUT); TAT_RELAY(COOLER_PIN); 
     pinMode(COOLER_VAL_PIN, OUTPUT); TAT_RELAY(COOLER_VAL_PIN);  
-    if(_tuning){
-        _tuning=false;
-        changeAutoTune();
-        _tuning=true;
-    }
     double a=ds1.readTemp();
     _startTemp = map(insideT,Calib);   
 }
@@ -39,7 +34,7 @@ ISR(TIMER1_COMPA_vect){
     if(_countCPID == _breakCPID) _onCPID = 1;
 }
 void loop(){
- //   TaskCheckError();
+    TaskCheckError();
     TaskSerial();
     TaskDisplay();
     TaskInput();
@@ -76,7 +71,7 @@ void TaskSerial(void)  // This is a task.
 }
 void hanlerSCmd(int& cmd, String& val){
     if(cmd == 1){
-        if((val.toInt()==1 && !_tuning) || (val.toInt()!=1 && _tuning))changeAutoTune();
+        
     }
 };
 
@@ -121,30 +116,10 @@ void TaskRunControl(void){  // This is a task.
         TAT_RELAY(COOLER_PIN);
         TAT_RELAY(COOLER_VAL_PIN);
         //use autotune
-        if(_tuning){
-            Serial.println(F("tuning is true"));
-            byte val = (aTune.Runtime());
-            if (val!=0){
-                _tuning = false;
-                Serial.println(F("tuning soon"));
-            } 
-            if(!_tuning){ //we're done, set the tuning parameters
-              _HKp = aTune.GetKp();
-              _HKi = aTune.GetKi();
-              _HKd = aTune.GetKd();
-              HPID.SetTunings(_HKp,_HKi,_HKd);
-              AutoTuneHelper(false);
-              Serial.println("   ");
-              Serial.println("TUNING COMPLETED! XXX");
-              Serial.print("Kp Value = ");
-              Serial.print(_HKp);
-              Serial.print(" Ki Value = ");
-              Serial.print(_HKi);
-              Serial.print(" Kd Value = ");
-              Serial.print(_HKd);
-              Serial.println("   ");
-            }
-        }else HPID.Compute();
+        if(abs(_nowTemp - _setTemp) < 1){
+            HPID.SetTunings(_PIDK[0],_PIDK[1],_PIDK[2]);
+        }
+        HPID.Compute();
         if(_inChangeHPID){
             _breakHPID = _outHPID;
             _inChangeHPID = false;

@@ -17,13 +17,17 @@ boolean RotatyEncoderMenu::update(void){
 	}
 	if ((b != Open)&&(b==Clicked)) {
 		if(MENU_STATE == inNone){
+			tone(_spkPin,500,50);
 			MENU_STATE = inSubMenu;
 			posSubMenu = 1;
 		}else if(MENU_STATE == inSubMenu){
+			tone(_spkPin,500,50);
 			MENU_STATE = inSubItem;
 		}else if(MENU_STATE == inSubItem){
+			tone(_spkPin,500,300);
 			MENU_STATE = inChange;
 		}else if(MENU_STATE == inChange){
+			tone(_spkPin,500,50);
 			MENU_STATE = inWaitChange;
 		}
 	};
