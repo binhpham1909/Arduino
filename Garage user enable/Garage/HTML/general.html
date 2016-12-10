@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>General Settings</title>
+<meta name="description" content="">
+<meta name="author" content="Anh Nguyen Tuan">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="stylesheet" href="css/normalize.css">
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/main.css">
+<script src="js/main.js"></script>
+<script src="js/jquery-3.1.0.min.js.gz"></script>
+<script src="js/ioPinMaps.js"></script>
+<style>
+.part1 {
+	display: inline-block;
+	width: 64px;
+}
+.part2 {
+	display: inline-block;
+	width: 105px;
+}
+.part3 {
+	display: inline-block;
+}
+.passwd {
+	display: inline-block;
+	width: 120px;
+}
+div#mainRow {
+  display:none;
+}
+</style>
+</head>
+<body>
+<p></p>
+<div class="container">
+	<div class="row">
+		<a href="admin.html" class="button button-primary backButton">&lt;</a>
+		<span class="titleBar">General Settings</span>
+	</div>
+	<div class="row">
+	<form name="settingsForm" id="settingsForm" method="post">
+		<div><label for="deviceName">Name of device</label><input type="text" class="u-full-width" id="deviceName" name="deviceName" maxlength="30" autofocus /></div>
+		<div><label for="password">Password</label> <input type="password" id="password" name="password" maxlength="12" class="u-full-width" /></div>
+		<div><label for="password2">Password (re-type)</label> <input type="password" id="password2" name="password2" maxlength="12" class="u-full-width" /></div>
+		<div>
+		<label for="categories">Categories</label>
+		<select name="categories" id="categories">
+		<option value="0">Alarm System</option>
+		<option value="1">Smoke &amp; CO2</option>
+		<option value="2">Light Automations</option>
+		<option value="3">Others</option>
+		</select>
+		</div>
+		<div id="mainRow">
+			<fieldset class="withBorder">
+		    <legend class="withBorder" id="gpio3Name">GPIO-3</legend>
+		    <div>
+		    	<label for="gpio30h" class="part1">Turn on:</label>
+		    	<input type="time" name="gpio30h" id="gpio30h" disabled class="part2" />
+				<span class="part3"><input type="checkbox" name="gpio30c" id="gpio30c" class="timer" /> <label for="gpio30c">Enabled</label></span>
+			</div>
+		    <div>
+		    	<label for="gpio31h" class="part1">Turn off:</label>
+		    	<input type="time" name="gpio31h" id="gpio31h" disabled class="part2" />
+		    	<span class="part3"><input type="checkbox" name="gpio31c" id="gpio31c" class="timer" > <label for="gpio31c">Enabled</label></span>
+		    </div>
+			abcdefghijk
+			</fieldset>
+		</div>		
+		<fieldset class="withBorder">
+		    <legend class="withBorder" >Alarm Timer</legend>
+			<label for="alarmPulse">Alarm Pulse:</label>
+			<input type="number" id="alarmPulse" name="alarmPulse" maxlength="10" />
+			<label for="alarmPulse">minutes</label>
+		</fieldset>
+		<fieldset class="withBorder">
+		    <legend class="withBorder" >Input Timer</legend>
+			<label for="inputPulse">Alarm Pulse:</label>
+			<input type="number" id="inputPulse" name="inputPulse" maxlength="10" />
+			<label for="inputPulse">minutes</label>
+		</fieldset>
+		<input class="button-primary" type="submit" value="Save" />
+		<div class="errorMessage" id="errorMsg"></div>
+		<div class="infoMessage" id="infoMsg"></div>
+	</form>
+	</div>
+</div>
+<script>
+var weekend = {'Su':2,'Mo':3,'Tu':5,'We':7,'Th':11,'Fr':13,'Sa':17};
+function BuildHtml() {
+	var bFirst = true;
+	var mainRowDiv = $("#mainRow");
+	var s = mainRowDiv.html();
+	var s1;
+	var add="";
+	$.each(weekend, function(name, val) {// for weekend
+		add +='<label for="gpio3w'+name+'">&nbsp;'+name+'&nbsp;</label> <input type="checkbox" class="weekend" id="gpio3w'+name+'" />';
+	});
+	s1 = s.replace(/abcdefghijk/g,add);	
+	mainRowDiv.html(s1);
+	$.each(outputPins, function(name, val) {
+		var sn = s1.replace(/gpio3/g,"gpio"+val);
+		if(val!=2){
+			if ( bFirst ) {
+				mainRowDiv.html(sn);
+				mainRowDiv.show();
+				bFirst = false;
+			} else {
+				mainRowDiv.append(sn).show();
+			}
+			$("#gpio"+val+"Name").html(name);		
+			$("#gpio14Name").html("FAN");
+			$("#gpio15Name").html("LIGHT");
+			$("#gpio99Name").html("ARM");
+		}
+	});
+}
+function getHName(chk) {
+	var name = chk.attr('name');
+	name = name.substring(0,name.length-1);
+	return name + 'h';
+}
+function populateData(data) {
+	$("#categories").val(data["cat"]);
+	$("#deviceName").val(data["device"]);
+	$("#password").val(data["password"]);
+	$("#password2").val(data["password"]);
+	$("#alarmPulse").val(data["alarmPulse"]);
+	$("#inputPulse").val(data["inputPulse"]);
+	$.each(data, function(name, value) {
+		if ( name!="cat" && name!="device" ) {
+			var ch = name.charAt(0);
+			var s = name.substring(1,name.length);
+			if ( ch=='h' ) $("#gpio"+s+"h").val(value);
+			else if ( ch=='c' ) {
+				$("#gpio"+s+"c").prop("checked",value);
+				$("#gpio"+s+"h").prop("disabled",!value);
+			}
+			else if ( ch=='w' ) {// for weekend
+				var id = name.substring(1,3);
+				$.each(weekend, function(n, v) {
+					if(value%v==0) $("#gpio"+id+"w"+n).prop("checked",true);
+					else $("#gpio"+id+"w"+n).prop("checked",false);
+				});
+			}
+		}
+	});
+}
+$(function() {
+	BuildHtml();
+	
+	$(".timer").change(function() {
+		var val = !$(this).is(':checked');
+		$("#"+getHName($(this))).prop("disabled",val);
+	});
+	
+	$.getJSON("/getgeneral", function(data) {
+		try {
+			populateData(data);
+		} catch (err) {
+			showErrorMsg(err.message);
+		}
+	});
+});
+
+function ParseTimeString(ts) {
+	var obj = new Object;
+	obj["hour"] = 0;
+	obj["minute"] = 0;
+	if ( ts.length<1 ) return obj;
+	var reg = /^\s*([0-2]?[0-9]):([0-5]?[0-9])\s*(am|pm)?\s*$/i;
+	var rsl = ts.match(reg);
+	if ( rsl && rsl.length==4 ) {
+		var hh = parseInt(rsl[1],10);
+		var mm = parseInt(rsl[2],10);
+		var ap = "";
+		if ( rsl[3]!==undefined ) ap = ("" + rsl[3]).toUpperCase();
+		if ( hh==12 && ap=="AM" ) hh=0;
+		if ( hh<12 && ap=="PM" ) hh += 12;
+		if ( mm<0 || mm>59 ) return false;
+		if ( hh<0 || hh>23 ) return false;
+		obj["hour"] = hh;
+		obj["minute"] = mm;
+		return obj;
+	}
+	return false;
+}
+
+$("#settingsForm").submit(function( event ) {
+	var data = new Object;
+	var newWeekend={};//edit pin here
+	$.each(outputPins, function(name, val){
+		newWeekend[""+val]=1;
+	});
+	hideMessages();
+	var sName = $("#deviceName").val();
+	if ( sName.length<4 ) {
+		showErrorMsg("Error: Device name must be more than 4 characters!");
+		$("#deviceName").focus();
+		return false;
+	}
+	var reg = /^[0-9a-zA-Z_\.\s-]+$/;
+	if ( !reg.test(sName) ) {
+		showErrorMsg("Error: Device name must not contain special characters!");
+		$("#deviceName").focus();
+		return false;
+	}
+	data["device"]=sName;
+	var pw = $("#password");
+	var pw2 = $("#password2");
+	var password = "" + pw.val();
+	if ( password.length<8 ) {
+		showErrorMsg("Error: Password must has at least 8 characters!");
+		$("#password").focus();
+		return false;
+	}
+	if ( password!=pw2.val() ) {
+		showErrorMsg("Error: Password does not match!");
+		$("#password").focus();
+		return false;
+	}
+	data["password"]=password;
+	
+	$(".weekend").each(function() {
+		var inputid = $(this).attr('id');
+		var pinid = inputid.substring(4,6);// eg 14
+		var wname = inputid.substring(7,9);// eg Mo
+		var chk = $(this).is(':checked');
+		if(chk) newWeekend[pinid]*=weekend[wname];
+	});	
+	$.each(outputPins, function(name, val){
+		data["w"+val]=newWeekend[""+val];
+	});	
+	
+	$(".timer").each(function() {
+		var pinName = $(this).attr('name');
+		var chk = $(this).is(':checked');
+		var hr = $("#"+getHName($(this)));
+		var tm = ParseTimeString(hr.val());
+		if ( !tm ) {
+			$(this).prop("checked",true);
+			hr.prop("disabled",false);
+			hr.focus();
+			showErrorMsg("Error: Invalid time. Time format should be hh:mm such as 8:20 or 6:25pm.");
+			return false;
+		}
+		var c = pinName.charAt(pinName.length-2);
+		pinName = pinName.substring(4,pinName.length-2);
+		if ( c=="0" ) {
+			data["a"+pinName] = tm["hour"];
+			data["m"+pinName] = tm["minute"];
+			data["x"+pinName] = chk?1:0;
+		} else {
+			data["b"+pinName] = tm["hour"];
+			data["n"+pinName] = tm["minute"];
+			data["y"+pinName] = chk?1:0;
+		}
+	});
+
+	var cat = $("#categories").val();
+	if ( cat<0 ) {
+		showErrorMsg("Error: Invalid category");
+		return false;
+	}
+	data["cat"]=cat;
+	data["alarmPulse"]=$("#alarmPulse").val();
+	data["inputPulse"]=$("#inputPulse").val();
+	$.getJSON("/setgeneral", data, function(rsl) {
+		try {
+			if ( rsl.status ) {
+				showInfoMsg("Data saved successfully.");
+			}
+		} catch (err) {
+			showErrorMsg(err.message);
+		}
+	});
+	return false;
+});
+</script>
+</body>
+</html>
