@@ -217,13 +217,13 @@ void loop ( void ) {
     if(g_FirstAPMode&&!g_ModuleSettings.data.ssid[0]){
         if ( g_ModuleSettings.data.pw[0] ) WiFi.begin(g_ModuleSettings.data.ssid, g_ModuleSettings.data.pw);
           else WiFi.begin(g_ModuleSettings.data.ssid);
-          for (int i=0; i<30; i++) {
+          for (int i=0; i<150; i++) {
             if ( WiFi.isConnected() ) {
               TRACE("CONNECTED!");
               StartAsWifiSTA();
             }
             if (g_pServer) g_pServer->handleClient();
-            delay(500);
+            delay(100);
           }
     }
     
