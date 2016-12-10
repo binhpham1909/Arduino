@@ -121,6 +121,7 @@ void setup ( void ) {
     g_pServer = new ESP8266WebServerEx(g_ModuleSettings.data.port);
     TRACE2("HTTP server port: ",g_ModuleSettings.data.port);
     TRACE2("IP address: ",WiFi.localIP());
+    g_FirstAPMode = false;
   }
   else {
     if ( StartAsWifiAP() ) {
@@ -212,6 +213,20 @@ void loop ( void ) {
         delay(1000);
         StartAsWifiSTA();
     }
+    
+    if(g_FirstAPMode&&!g_ModuleSettings.data.ssid[0]){
+        if ( g_ModuleSettings.data.pw[0] ) WiFi.begin(g_ModuleSettings.data.ssid, g_ModuleSettings.data.pw);
+          else WiFi.begin(g_ModuleSettings.data.ssid);
+          for (int i=0; i<30; i++) {
+            if ( WiFi.isConnected() ) {
+              TRACE("CONNECTED!");
+              StartAsWifiSTA();
+            }
+            if (g_pServer) g_pServer->handleClient();
+            delay(500);
+          }
+    }
+    
   if (g_pServer) g_pServer->handleClient();
 
   if ( g_IsAPMode ) {
@@ -487,7 +502,7 @@ void handleSetNetworkSettings() {
 bool StartAsWifiSTA() {
   WiFi.softAPdisconnect();
   WiFi.disconnect();
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_AP_STA);
 
   TRACE("Trying to connect to WIFI");
 
