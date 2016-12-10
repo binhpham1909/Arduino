@@ -52,12 +52,14 @@
 // max size of the WS Message Header
 #define WEBSOCKETS_MAX_HEADER_SIZE  (14)
 
+#if !defined(WEBSOCKETS_NETWORK_TYPE) 
 // select Network type based
 #if defined(ESP8266) || defined(ESP31B)
 #define WEBSOCKETS_NETWORK_TYPE NETWORK_ESP8266
 //#define WEBSOCKETS_NETWORK_TYPE NETWORK_ESP8266_ASYNC
 #else
 #define WEBSOCKETS_NETWORK_TYPE NETWORK_W5100
+#endif
 #endif
 
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266_ASYNC)
@@ -159,6 +161,8 @@ typedef struct {
 
         WEBSOCKETS_NETWORK_CLASS * tcp;
 
+        bool isSocketIO;    ///< client for socket.io server
+
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266)
         bool isSSL;             ///< run in ssl mode
         WiFiClientSecure * ssl;
@@ -170,6 +174,7 @@ typedef struct {
         bool cIsUpgrade;    ///< Connection == Upgrade
         bool cIsWebsocket;  ///< Upgrade == websocket
 
+        String cSessionId;  ///< client Set-Cookie (session id)
         String cKey;        ///< client Sec-WebSocket-Key
         String cAccept;     ///< client Sec-WebSocket-Accept
         String cProtocol;   ///< client Sec-WebSocket-Protocol
@@ -181,6 +186,10 @@ typedef struct {
         WSMessageHeader_t cWsHeaderDecode;
 
         String base64Authorization; ///< Base64 encoded Auth request
+        String plainAuthorization; ///< Base64 encoded Auth request
+
+        bool cHttpHeadersValid; ///< non-websocket http header validity indicator
+        size_t cMandatoryHeadersCount; ///< non-websocket mandatory http headers present count
 
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266_ASYNC)
         String cHttpLine;   ///< HTTP header lines
@@ -201,7 +210,7 @@ class WebSockets {
         virtual void clientDisconnect(WSclient_t * client);
         virtual bool clientIsConnected(WSclient_t * client);
 
-        virtual void messageRecived(WSclient_t * client, WSopcode_t opcode, uint8_t * payload, size_t length);
+        virtual void messageReceived(WSclient_t * client, WSopcode_t opcode, uint8_t * payload, size_t length);
 
         void clientDisconnect(WSclient_t * client, uint16_t code, char * reason = NULL, size_t reasonLen = 0);
         bool sendFrame(WSclient_t * client, WSopcode_t opcode, uint8_t * payload = NULL, size_t length = 0, bool mask = false, bool fin = true, bool headerToPayload = false);
