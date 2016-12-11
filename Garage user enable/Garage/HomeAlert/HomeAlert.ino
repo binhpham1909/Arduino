@@ -509,7 +509,7 @@ void handleSetNetworkSettings() {
 bool StartAsWifiSTA() {
   WiFi.softAPdisconnect();
   WiFi.disconnect();
-  WiFi.mode(WIFI_AP_STA);
+  WiFi.mode(WIFI_STA);
 
   TRACE("Trying to connect to WIFI");
 
@@ -558,7 +558,7 @@ bool StartAsWifiSTA() {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 bool StartAsWifiAP() {
   WiFi.disconnect(); 
-  WiFi.mode(WIFI_AP);
+  WiFi.mode(WIFI_AP_STA);
 
   WiFi.softAPConfig(g_ApIp,g_ApIp,IPAddress(255,255,255,0));
 
