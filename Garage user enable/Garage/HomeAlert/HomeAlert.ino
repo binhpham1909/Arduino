@@ -98,7 +98,7 @@ bool StartAsWifiAP();
 bool g_IsAPMode = false;
 bool g_FirstAPMode = false;
 unsigned long g_lastSave = 0;
-
+unsigned long g_lastimeCheckConn;
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // global setup
 void setup ( void ) { 
@@ -214,17 +214,22 @@ void loop ( void ) {
         StartAsWifiSTA();
     }
     
-    if(g_FirstAPMode&&!g_ModuleSettings.data.ssid[0]){
-        if ( g_ModuleSettings.data.pw[0] ) WiFi.begin(g_ModuleSettings.data.ssid, g_ModuleSettings.data.pw);
-          else WiFi.begin(g_ModuleSettings.data.ssid);
-          for (int i=0; i<150; i++) {
-            if ( WiFi.isConnected() ) {
-              TRACE("CONNECTED!");
-              StartAsWifiSTA();
-            }
-            if (g_pServer) g_pServer->handleClient();
-            delay(100);
-          }
+    if(g_FirstAPMode&&g_ModuleSettings.data.ssid[0]){
+        if((millis()-g_lastimeCheckConn)>5000){
+            int numSsid = WiFi.scanNetworks();
+            if (numSsid == -1) {
+                TRACE("Couldn't get a wifi connection");
+            }  
+            for (int thisNet = 0; thisNet < numSsid; thisNet++) {
+                if(String(WiFi.SSID(thisNet))==String(g_ModuleSettings.data.ssid)){
+                    TRACE2("ssid :", WiFi.SSID(thisNet));
+                    g_FirstAPMode = false;
+                    if(StartAsWifiSTA()){
+                        ESP.restart();
+                    }
+                }
+            }          
+        }
     }
     
   if (g_pServer) g_pServer->handleClient();
