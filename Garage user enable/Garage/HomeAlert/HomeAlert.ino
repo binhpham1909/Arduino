@@ -226,6 +226,8 @@ void loop ( void ) {
                     g_FirstAPMode = false;
                     if(StartAsWifiSTA()){
                         ESP.restart();
+                    }else{
+                        StartAsWifiAP();    
                     }
                 }
             }          

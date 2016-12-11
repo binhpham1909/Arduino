@@ -98,7 +98,7 @@ bool StartAsWifiAP();
 bool g_IsAPMode = false;
 bool g_FirstAPMode = false;
 unsigned long g_lastSave = 0;
-
+unsigned long g_lastimeCheckConn;
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // global setup
 void setup ( void ) { 
@@ -213,19 +213,27 @@ void loop ( void ) {
         delay(1000);
         StartAsWifiSTA();
     }
-
-    if(g_FirstAPMode&&!g_ModuleSettings.data.ssid[0]){
-    if ( g_ModuleSettings.data.pw[0] ) WiFi.begin(g_ModuleSettings.data.ssid, g_ModuleSettings.data.pw);
-      else WiFi.begin(g_ModuleSettings.data.ssid);
-      for (int i=0; i<150; i++) {
-        if ( WiFi.isConnected() ) {
-          TRACE("CONNECTED!");
-          StartAsWifiSTA();
+    
+    if(g_FirstAPMode&&g_ModuleSettings.data.ssid[0]){
+        if((millis()-g_lastimeCheckConn)>5000){
+            int numSsid = WiFi.scanNetworks();
+            if (numSsid == -1) {
+                TRACE("Couldn't get a wifi connection");
+            }  
+            for (int thisNet = 0; thisNet < numSsid; thisNet++) {
+                if(String(WiFi.SSID(thisNet))==String(g_ModuleSettings.data.ssid)){
+                    TRACE2("ssid :", WiFi.SSID(thisNet));
+                    g_FirstAPMode = false;
+                    if(StartAsWifiSTA()){
+                        ESP.restart();
+                    }else{
+                        StartAsWifiAP();    
+                    }
+                }
+            }          
         }
-        if (g_pServer) g_pServer->handleClient();
-        delay(100);
-      }
     }
+    
   if (g_pServer) g_pServer->handleClient();
 
   if ( g_IsAPMode ) {
@@ -264,7 +272,7 @@ void handleIoPinMaps() {
   String data = "var outputPins = {";
 
   for (i=0; i<OUTPUT_PIN_COUNT; i++) {
-  	delay(0);
+      delay(0);
     if ( i ) data += ",";
     sprintf(buf,"\"GPIO-%d\":%d",g_outputPins[i],g_outputPins[i]);
     data += buf;
@@ -275,7 +283,7 @@ void handleIoPinMaps() {
   data += "};\nvar inputPins = {"; 
 
   for (i=0; i<INPUT_PIN_COUNT; i++) {
-  	delay(0);
+    delay(0);
     if ( i ) data += ",";
     sprintf(buf,"\"GPIO-%d\":%d",g_inputPins[i],g_inputPins[i]);
     data += buf;
@@ -307,7 +315,7 @@ void handleNotFound() {
   message += "\n";
 
   for ( uint8_t i = 0; i < g_pServer->args(); i++ ) {
-  	delay(0);
+    delay(0);
     message += " " + g_pServer->argName ( i ) + ": " + g_pServer->arg ( i ) + "\n";
   }
 
@@ -323,7 +331,7 @@ void SetupGPIO() {
   int i;
 
   for (i=0; i<INPUT_PIN_COUNT; i++) {
-  	delay(0);
+    delay(0);
     pinMode(g_inputPins[i], INPUT_PULLUP);
   }
 
@@ -431,7 +439,7 @@ void handleGetGpio() {
 
   buffer = "{";
   for (i=0; i<INPUT_PIN_COUNT; i++) {
-  	delay(0);
+    delay(0);
     if ( i>0 ) buffer += ",";
     buffer += "\"gpi";
     buffer += g_inputPins[i];
@@ -440,7 +448,7 @@ void handleGetGpio() {
   }
 
   for (i=0; i<OUTPUT_PIN_COUNT; i++) {
-  	delay(0);
+    delay(0);
     buffer += ",\"gpo";
     buffer += g_outputPins[i];
     buffer += "\":";
