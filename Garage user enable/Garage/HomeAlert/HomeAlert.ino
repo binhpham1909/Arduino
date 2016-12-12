@@ -50,7 +50,7 @@ int g_ARM_INPUT_PIN = 5;
 int g_ARM_OFF_PIN = 99; // virtual pin for toggle off ARM
 int g_BELL_PIN = 16;
 char* g_WifiApPassword = NULL;
-IPAddress g_ApIp(192,168,1,1);
+IPAddress g_ApIp(192,168,3,1);
 /////////////////////////////////////////////////////////////////////////
 
 const int ANALOG_PIN = A0;  // Analog input. Need to seed the random generator
@@ -99,6 +99,8 @@ bool g_IsAPMode = false;
 bool g_FirstAPMode = false;
 unsigned long g_lastSave = 0;
 unsigned long g_lastimeCheckConn;
+String inputString;
+bool stringComplete=false;
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // global setup
 void setup ( void ) { 
@@ -108,7 +110,7 @@ void setup ( void ) {
   g_IsAPMode = false;
 
   g_ModuleSettings.LoadSettings();
-  g_ModuleSettings.data.ending=8;
+  g_ModuleSettings.data.ending=9;
    g_ModuleSettings.SaveSettings();
   // seed the random generator sources
   randomSeed(analogRead(ANALOG_PIN) ^ millis());
@@ -173,7 +175,9 @@ void setup ( void ) {
     g_pServer->on("/getnetworksettings", []() { handleGetNetworkSettings(false); });
     g_pServer->on("/network.html", []() { g_pServer->sendEx(200, MimeHtml, network_html, sizeof(network_html)); });
     g_pServer->on("/", []() { g_pServer->sendEx(200, MimeHtml, network_html, sizeof(network_html)); });
-    
+    g_pServer->on("/hotspot-detect.html", []() { g_pServer->sendEx(200, MimeHtml, network_html, sizeof(network_html)); });
+    g_pServer->on("/ search", []() { g_pServer->sendEx(200, MimeHtml, network_html, sizeof(network_html)); });
+    g_pServer->on("/search", []() { g_pServer->sendEx(200, MimeHtml, network_html, sizeof(network_html)); });
     g_pServer->begin();
     return;
   }
@@ -216,6 +220,7 @@ void loop ( void ) {
     
     if(g_FirstAPMode&&g_ModuleSettings.data.ssid[0]){
         if((millis()-g_lastimeCheckConn)>5000){
+            g_lastimeCheckConn = millis();
             int numSsid = WiFi.scanNetworks();
             if (numSsid == -1) {
                 TRACE("Couldn't get a wifi connection");
@@ -255,6 +260,20 @@ void loop ( void ) {
     }
   }
   else g_lastSave = curMillis;
+  serialEvent();
+  
+  if (stringComplete) {
+    Serial.println(inputString);
+    if(inputString.indexOf("restore")>=0){
+        g_ModuleSettings.CleanSettings();
+        ESP.restart();
+    }else if(inputString.indexOf("restart")>=0){
+        ESP.restart();
+    }
+    // clear the string:
+    inputString = "";
+    stringComplete = false;
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -272,7 +291,7 @@ void handleIoPinMaps() {
   String data = "var outputPins = {";
 
   for (i=0; i<OUTPUT_PIN_COUNT; i++) {
-  	delay(0);
+      delay(0);
     if ( i ) data += ",";
     sprintf(buf,"\"GPIO-%d\":%d",g_outputPins[i],g_outputPins[i]);
     data += buf;
@@ -283,7 +302,7 @@ void handleIoPinMaps() {
   data += "};\nvar inputPins = {"; 
 
   for (i=0; i<INPUT_PIN_COUNT; i++) {
-  	delay(0);
+    delay(0);
     if ( i ) data += ",";
     sprintf(buf,"\"GPIO-%d\":%d",g_inputPins[i],g_inputPins[i]);
     data += buf;
@@ -315,7 +334,7 @@ void handleNotFound() {
   message += "\n";
 
   for ( uint8_t i = 0; i < g_pServer->args(); i++ ) {
-  	delay(0);
+    delay(0);
     message += " " + g_pServer->argName ( i ) + ": " + g_pServer->arg ( i ) + "\n";
   }
 
@@ -331,7 +350,7 @@ void SetupGPIO() {
   int i;
 
   for (i=0; i<INPUT_PIN_COUNT; i++) {
-  	delay(0);
+    delay(0);
     pinMode(g_inputPins[i], INPUT_PULLUP);
   }
 
@@ -439,7 +458,7 @@ void handleGetGpio() {
 
   buffer = "{";
   for (i=0; i<INPUT_PIN_COUNT; i++) {
-  	delay(0);
+    delay(0);
     if ( i>0 ) buffer += ",";
     buffer += "\"gpi";
     buffer += g_inputPins[i];
@@ -448,7 +467,7 @@ void handleGetGpio() {
   }
 
   for (i=0; i<OUTPUT_PIN_COUNT; i++) {
-  	delay(0);
+    delay(0);
     buffer += ",\"gpo";
     buffer += g_outputPins[i];
     buffer += "\":";
@@ -581,5 +600,19 @@ void handleRebootEsp() {
   delay(100);
   g_pServer->close();
   ESP.restart();
+}
+///////////////////////////////
+void serialEvent() {
+  while (Serial.available()) {
+    // get the new byte:
+    char inChar = (char)Serial.read();
+    // add it to the inputString:
+    inputString += inChar;
+    // if the incoming character is a newline, set a flag
+    // so the main loop can do something about it:
+    if (inChar == '\n') {
+      stringComplete = true;
+    }
+  }
 }
 
