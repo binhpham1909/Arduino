@@ -171,6 +171,7 @@ void setup ( void ) {
   g_pServer->on("/scanwifi", handleScanWiFi);
   g_pServer->on("/setnetworksettings", handleSetNetworkSettings); 
   g_pServer->on("/reboot", handleRebootEsp);
+  
   if ( g_IsAPMode ) {    
     g_pServer->on("/getnetworksettings", []() { handleGetNetworkSettings(false); });
     g_pServer->on("/network.html", []() { g_pServer->sendEx(200, MimeHtml, network_html, sizeof(network_html)); });
