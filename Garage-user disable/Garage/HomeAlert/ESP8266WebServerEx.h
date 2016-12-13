@@ -14,7 +14,7 @@ typedef void (*TDataProcessingHandler)(char* data, int len);
 class ESP8266WebServerEx : public ESP8266WebServer {
   
 protected:
-
+  unsigned long lastTimeProgButtonLow; 
   bool hasLogin;
   HttpSession g_Session;
   static String challengeString;
@@ -33,6 +33,7 @@ protected:
   void sendEx(int code, const char* content_type, const char* data, size_t contentLength, TDataProcessingHandler handler);  
 
 public:
+    void checkProgButton();
   void ForceLogin(bool bLogin) { hasLogin=bLogin; }
 
   String GetSessionId();

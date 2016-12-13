@@ -9,6 +9,7 @@
 
 extern ModuleSettings g_ModuleSettings;
 extern int g_ARM_OFF_PIN;
+extern int g_ProgButton;
 extern ArmLogic g_ArmLogic;
 
 const char ESP8266WebServerEx::m_jsonMime[] = "application/json";
@@ -204,12 +205,15 @@ void ESP8266WebServerEx::handleSetGpio() {
   for (i=0; i<MAX_PIN_NUMBER; i++) {
     delay(0);
     sprintf(buf,"%d",i);
-    if ( hasArg(buf) ) {
+    if ( hasArg(buf)&&(i!=g_ProgButton)) {
       if ( atoi(arg(buf).c_str()) ) {
         digitalWrite(i,HIGH);
       } else{
         digitalWrite(i,LOW);  
       }
+    }else if ( hasArg(buf)&&(i==g_ProgButton)&&digitalRead(i)){// prog pin dang o trang thai cao
+        digitalWrite(i,LOW);
+        lastTimeProgButtonLow = millis();
     }
   }
   // Check virtual pin for ARM/DISARM
@@ -224,7 +228,11 @@ void ESP8266WebServerEx::handleSetGpio() {
   send(200, m_jsonMime, "{\"status\":true}");
   free(buf);
 }
-
+void ESP8266WebServerEx::checkProgButton(){
+    if(!digitalRead(g_ProgButton)&&((millis()-lastTimeProgButtonLow)>=30000)){
+        digitalWrite(g_ProgButton,HIGH);
+    }
+};
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////
