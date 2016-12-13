@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Network Settings</title>
+<meta name="description" content="">
+<meta name="author" content="Binh Pham Huu">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="stylesheet" href="css/normalize.css">
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/main.css">
+<script src="js/main.js"></script>
+<script src="js/jquery-3.1.0.min.js.gz"></script>
+<style>
+.space {
+	width: 120px;
+    display:inline-block;
+    float: left;
+    vertical-align: middle;
+}
+.myinput {
+	width: calc(100% - 125px);
+}
+#header {
+	display:none;
+}
+</style>
+</head>
+<body>
+<p></p>
+<div class="container">
+	<div class="row" id="header">
+		<a href="admin.html" class="button button-primary backButton">&lt;</a>
+		<span class="titleBar">Network Settings</span>
+	</div>
+	<div class="row">
+	<form name="networkSetting" id="networkSetting" method="post">
+		<label for="ssid" class="space">WiFi SSID</label>
+		<select name="ssid" id="ssid" autofocus class="myinput" >
+		</select> 
+		<div><label for="password" class="space">WiFi Password</label>
+		<input type="password" name="password" id="password" maxlength="20" placeholder="Password" class="myinput" /></div>
+		<div><span class="space">&nbsp;</span>
+		<label for="dhcp"><input type="radio" name="dhcp" id="dhcp" value="true" /> DHCP </label> &nbsp; 
+		<label for="fixed"><input type="radio" name="dhcp" id="fixed" value="false" /> Static IP </label></div>
+		<div><label for="ip" class="space" class="space">IP address</label>
+		<input type="text" name="ip" id="ip" maxlength="15" placeholder="192.168.10.100" class="myinput" /></div>
+		<div><label for="mask" class="space">Subnet mask</label>
+		<input type="text" name="mask" id="mask" maxlength="15" placeholder="255.255.255.0" class="myinput" /></div>
+		<div><label for="gw" class="space">Gateway</label>
+		<input type="text" name="gw" id="gw" maxlength="15" placeholder="192.168.10.1" class="myinput" /></div>
+		<div><label for="port" class="space">HTTP Port</label>
+		<input type="number" name="port" id="port" maxlength="5" placeholder="80" min="80" max="65535" value="80" style="width:90px;" /></div>
+		<div><label class="space">MAC</label>
+		<span id="mac" style="myinput">&nbsp;</span></div><br />
+		<div><input class="button-primary" type="submit" value="Save"> &nbsp; <input class="button-primary" type="button" value="Restart" id="reboot" name="reboot"></div>
+		<div class="errorMessage" id="errorMsg"></div>
+		<div class="infoMessage" id="infoMsg"></div>
+	</form>
+	</div>
+</div>
+<script>
+var curSsid = "";
+function DisableStatic(ena) {
+	$("#ip").prop("disabled",ena);
+	$("#mask").prop("disabled",ena);
+	$("#gw").prop("disabled",ena);
+}
+$("#dhcp").change(function() {
+    DisableStatic($("#dhcp").is(':checked'));
+});
+$("#fixed").change(function() {
+    DisableStatic($("#dhcp").is(':checked'));
+});
+$("#reboot").click(function() {
+	var answer = confirm("This will reboot your ESP.\nAre you sure?")
+	if (answer){
+		alert("rebooting...\nPlease open the new URL per your settings.");
+		try {
+			$.getJSON("/reboot", function(data) {});
+		}
+		catch (e) {}
+	}
+});
+function SetFormData() {
+	$.getJSON("/getnetworksettings", function(data) {
+		try {
+			$.each(data, function(name, value) {
+				if ( name=="dhcp" ) {
+					$("#dhcp").prop("checked",value);
+					$("#fixed").prop("checked",!value);
+					DisableStatic(value);
+				}
+				else {
+					if ( name=="header" ) { if (value) $("#header").show(); }
+					else if ( name=="ssid" ) {
+						curSsid = value;
+						if (value.length>0 && $("#ssid option").length>0 ) $("#ssid").val(value);
+					}
+					else if ( name=="mac" ) $("#"+name).html(value);
+					else $("#"+name).val(value);
+				}
+			});
+		} catch (err) {
+			showErrorMsg(err.message);
+		}
+	});
+}
+function ScanWifi() {
+	$.getJSON("/scanwifi", function(data) {
+		try {
+			var list = $("#ssid");
+			$.each(data, function(name, value) {
+			  list.append(new Option(name,value));
+			  if (curSsid.length>0 && $("#ssid option").length>0) list.val(curSsid);
+			});
+		} catch (err) {
+			showErrorMsg(err.message);
+		}
+	});
+}
+$(function() {
+	SetFormData();
+	ScanWifi();
+});
+$("#networkSetting").submit(function( event ) {
+	var ip = $("#ip");
+	var mask = $("#mask");
+	var gw = $("#gw");
+	var port = $("#port");
+	var isDhcp = $('#dhcp').is(':checked');
+	var ssid = $("#ssid").val() ? $("#ssid").val() : "";
+
+	if ( !isDhcp ) {
+		if ( !isIPv4(ip) ) {
+			showErrorMsg("Error: Invalid IP address");
+			return false;
+		}
+		if ( !isSubnetMask(mask) ) {
+			showErrorMsg("Error: Invalid subnet mask");
+			return false;
+		}
+		if ( !isIPv4(gw) ) {
+			showErrorMsg("Error: Invalid Gateway IP address");
+			return false;
+		}
+	}
+	if ( !isValidNumber(port,80,65535) ) {
+		showErrorMsg("Error: Invalid port number");
+		return false;
+	}
+	var obj = new Object;
+	obj["ssid"] = ssid;
+	obj["pw"] = "" + $("#password").val();
+	obj["dhcp"] = isDhcp ? 1 : 0;
+	obj["ip"] = ip.val();
+	obj["mask"] = mask.val();
+	obj["gw"] = gw.val();
+	obj["port"] = port.val();
+	$.getJSON("/setnetworksettings", obj, function(rsl) {
+		try {
+			if ( rsl.status ) {
+				showInfoMsg("Data saved succesfully.<br />Please restart your module to use the new settings.");
+			}
+		} catch (err) {
+			showErrorMsg(err.message);
+		}
+	});
+  	return false;
+});
+</script>
+</body>
+</html>

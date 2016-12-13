@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Time Settings</title>
+<meta name="description" content="">
+<meta name="author" content="Binh Pham Huu">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="stylesheet" href="css/normalize.css">
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/main.css">
+<script src="js/main.js"></script>
+<script src="js/jquery-3.1.0.min.js.gz"></script>
+</head>
+<body>
+<p></p>
+<div class="container">
+	<div class="row">
+		<a href="admin.html" class="button button-primary backButton">&lt;</a>
+		<span class="titleBar">Time Settings</span>
+	</div>
+	<div class="row">
+	<form name="timeSetting" id="timeSetting" method="post">
+		<label for="timeServer">NTP Server</label>
+  		<input type="text" class="u-full-width" id="timeServer" name="timeServer" maxlength="20" placeholder="pool.ntp.org">
+		<select name="timeZone" id="timeZone" autofocus>
+		<option value="0">(UTC-12:00) International Date Line West</option>
+		<option value="1">(UTC-11:00) Coordinated Universal Time-11</option>
+		<option value="2">(UTC-10:00) Hawaii</option>
+		<option value="3">(UTC-09:00) Alaska</option>
+		<option value="4">(UTC-08:00) Pacific Time (US and Canada)</option>
+		<option value="5">(UTC-08:00) Baja California</option>
+		<option value="6">(UTC-07:00) Mountain Time (US and Canada)</option>
+		<option value="7">(UTC-07:00) Chihuahua, La Paz, Mazatlan</option>
+		<option value="8">(UTC-07:00) Arizona</option>
+		<option value="9">(UTC-06:00) Central Time (US and Canada)</option>
+		<option value="10">(UTC-06:00) Saskatchewan</option>
+		<option value="11">(UTC-06:00) Guadalajara, Mexico City, Monterrey</option>
+		<option value="12">(UTC-06:00) Central America</option>
+		<option value="13">(UTC-05:00) Eastern Time (US and Canada)</option>
+		<option value="14">(UTC-05:00) Indiana (East)</option>
+		<option value="15">(UTC-05:00) Bogota, Lima, Quito, Rio Branco</option>
+		<option value="16">(UTC-04:00) Atlantic Time (Canada)</option>
+		<option value="17">(UTC-04:30) Caracas</option>
+		<option value="18">(UTC-04:00) Santiago</option>
+		<option value="19">(UTC-04:00) Asuncion</option>
+		<option value="20">(UTC-04:00) Cuiaba</option>
+		<option value="21">(UTC-04:00) Georgetown, La Paz, Manaus, San Juan</option>
+		<option value="22">(UTC-03:30) Newfoundland</option>
+		<option value="23">(UTC-03:00) Brasilia</option>
+		<option value="24">(UTC-03:00) Buenos Aires</option>
+		<option value="25">(UTC-03:00) Greenland</option>
+		<option value="26">(UTC-02:00) Mid-Atlantic</option>
+		<option value="27">(UTC-01:00) Azores</option>
+		<option value="28">(UTC-01:00) Cape Verde Islands</option>
+		<option value="29">(UTC) Greenwich Mean Time: Dublin, Edinburgh, Lisbon, London</option>
+		<option value="30">(UTC+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague</option>
+		<option value="31">(UTC+01:00) Sarajevo, Skopje, Warsaw, Zagreb</option>
+		<option value="32">(UTC+01:00) Brussels, Copenhagen, Madrid, Paris</option>
+		<option value="33">(UTC+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna</option>
+		<option value="34">(UTC+01:00) West Central Africa</option>
+		<option value="35">(UTC+02:00) Athens, Bucharest</option>
+		<option value="36">(UTC+02:00) Cairo</option>
+		<option value="37">(UTC+02:00) Beirut</option>
+		<option value="38">(UTC+02:00) Damascus</option>
+		<option value="39">(UTC+02:00) Istanbul</option>
+		<option value="40">(UTC+02:00) Helsinki, Kiev, Riga, Sofia, Tallinn, Vilnius</option>
+		<option value="41">(UTC+02:00) Minsk</option>
+		<option value="42">(UTC+02:00) Jerusalem</option>
+		<option value="43">(UTC+02:00) Harare, Pretoria</option>
+		<option value="44">(UTC+03:00) Moscow, St. Petersburg, Volgograd</option>
+		<option value="45">(UTC+03:00) Kuwait, Riyadh</option>
+		<option value="46">(UTC+03:00) Nairobi</option>
+		<option value="47">(UTC+03:00) Baghdad</option>
+		<option value="48">(UTC+04:00) Abu Dhabi, Muscat</option>
+		<option value="49">(UTC+04:00) Baku</option>
+		<option value="50">(UTC+04:30) Kabul</option>
+		<option value="51">(UTC+05:00) Ekaterinburg</option>
+		<option value="52">(UTC+05:00) Islamabad, Karachi, Tashkent</option>
+		<option value="53">(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi</option>
+		<option value="54">(UTC+05:45) Kathmandu</option>
+		<option value="55">(UTC+06:00) Astana, Dhaka</option>
+		<option value="56">(UTC+06:00) Sri Jayawardenepura</option>
+		<option value="57">(UTC+06:00) Almaty, Novosibirsk</option>
+		<option value="58">(UTC+06:30) Yangon Rangoon</option>
+		<option value="59">(UTC+07:00) Bangkok, Hanoi, Jakarta</option>
+		<option value="60">(UTC+07:00) Krasnoyarsk</option>
+		<option value="61">(UTC+08:00) Beijing, Chongqing, Hong Kong SAR, Urumqi</option>
+		<option value="62">(UTC+08:00) Kuala Lumpur, Singapore</option>
+		<option value="63">(UTC+08:00) Taipei</option>
+		<option value="64">(UTC+08:00) Perth</option>
+		<option value="65">(UTC+08:00) Ulaanbaatar</option>
+		<option value="66">(UTC+09:00) Seoul</option>
+		<option value="67">(UTC+09:00) Osaka, Sapporo, Tokyo</option>
+		<option value="68">(UTC+09:00) Yakutsk</option>
+		<option value="69">(UTC+09:30) Darwin</option>
+		<option value="70">(UTC+09:30) Adelaide</option>
+		<option value="71">(UTC+10:00) Canberra, Melbourne, Sydney</option>
+		<option value="72">(UTC+10:00) Brisbane</option>
+		<option value="73">(UTC+10:00) Hobart</option>
+		<option value="74">(UTC+10:00) Vladivostok</option>
+		<option value="75">(UTC+10:00) Guam, Port Moresby</option>
+		<option value="76">(UTC+11:00) Magadan, Solomon Islands, New Caledonia</option>
+		<option value="77">(UTC+12:00) Fiji Islands, Kamchatka, Marshall Islands</option>
+		<option value="78">(UTC+12:00) Auckland, Wellington</option>
+		</select> 
+		<input class="button-primary" type="submit" value="Save">
+		<div class="errorMessage" id="errorMsg"></div>
+		<div class="infoMessage" id="infoMsg"></div>
+	</form>
+	</div>
+	<div class="row">Last udpate: <span id="updateTime">22/12/2016 12:27:20</span></div>
+</div>
+<script>
+var epochServer = 0;
+var epochClient = 0;
+function updateClock() {
+	$("#updateTime").html( currentServerDateTime(epochServer,epochClient) );
+}
+function updateForm(bUpdateField) {
+	epochServer = 0;
+	epochClient = 0;
+	$.getJSON("/gettimesettings", function(obj) {
+		try {
+			if ( bUpdateField ) {
+		 		$("#timeZone").val(obj.zone);
+		 		$("#timeServer").val(obj.server);
+			}
+	 		epochServer = obj.time;
+	 		epochClient = Date.now();
+		} catch (err) {
+			showErrorMsg(err.message);
+		}
+	});
+
+	updateClock();
+	setInterval(function() { updateClock();	}, 1000);
+}
+$(function() {
+	updateForm(true);
+});
+$("#timeSetting").submit(function( event ) {
+	hideMessages();
+	var idx = $("#timeZone").val();
+	var server = $("#timeServer").val();
+	
+	if ( server.length<4 ) {
+		$("#timeServer").focus();
+		showErrorMsg("Error: NTP Server must have more than 4 characters!");
+		return false;
+	}
+	var reg = /^[0-9a-zA-Z_\.-]+$/;
+	if ( !reg.test(server) ) {
+		$("#timeServer").focus();
+		showErrorMsg("Error: NTP Server must not contain special characters!");
+		return false;
+	}
+	if ( idx>=0 ) {
+		var obj = new Object();
+		obj["zone"] = idx;
+		obj["server"] = server;
+		$.getJSON("/settimesettings", obj, function(data) {
+			try {
+				if ( data.status ) {
+					showInfoMsg("Data saved successfully.");
+					updateForm(false);
+				}
+			} catch (err) {
+				showErrorMsg(err.message);
+			}
+		});
+  	}
+  	return false;
+});
+</script>
+</body>
+</html>

@@ -65,9 +65,9 @@ label.forCheckBox {
 		<div><span class="blank">&nbsp;</span><input type="checkbox" name="enaEmail" id="enaEmail" /><label for="enaEmail" class="forCheckBox">Enabled email</label></div>
 		<div><label for="txtPhone">SMS Notification</label> <input type="text" name="txtPhone" id="txtPhone" placeholder="(408) 123-4567" /></div>
 		<div><span class="blank">&nbsp;</span><input type="checkbox" name="enaPhone" id="enaPhone" /> <label for="enaPhone" class="forCheckBox">Enabled SMS</label></div>
-		<div><label for="smsCount">SMS Count</label> <input type="number" name="smsCount" id="smsCount" min="0" max="99999" disabled/></div>
-		<div><label for="smsAlert">SMS Alert</label> <input type="number" name="smsAlert" id="smsAlert" min="0" max="100" disabled/></div>
-		<div><label for="smsRt">SMS RT</label> <input type="number" name="smsRt" id="smsRt" min="0" max="10" disabled/></div>
+		<div><label for="smsCount">SMS Count</label> <input type="number" name="smsCount" id="smsCount" min="0" max="99999"/></div>
+		<div><label for="smsAlert">SMS Alert</label> <input type="number" name="smsAlert" id="smsAlert" min="0" max="100"/></div>
+		<div><label for="smsRt">SMS RT</label> <input type="number" name="smsRt" id="smsRt" min="0" max="10"/></div>
 		<div><label for="smsInput">Max SMS Input</label> <input type="number" name="smsInput" id="smsInput" min="0" max="10" /></div>
 		<div><label for="apikey">Email API Key</label><span> <input type="password" name="apikey" id="apikey" maxlength="36" /></span></div>
 		<div><label for="sms_server">SMS Server</label> <input type="password" name="sms_server" id="sms_server" placeholder="SMS server" /></div>
@@ -98,9 +98,7 @@ function setFormData() {
 			$("textarea").prop("disabled",true);
 			$("#txtEmail").prop("disabled",false);
 			$("#txtPhone").prop("disabled",false);
-			$("#smsRt").prop("disabled",false);
 			$("#apikey").prop("disabled",false);
-			$("#sms_server").prop("disabled",false);
 			$("#sms_api_key").prop("disabled",false);
 			$("#sms_api_secret").prop("disabled",false);
 			$("#btnSubmit").prop("disabled",false);
