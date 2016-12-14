@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Login</title>
+<meta name="description" content="Login">
+<meta name="author" content="Binh Pham Huu">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="stylesheet" href="css/normalize.css">
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/main.css">
+<script src="js/jquery-3.1.0.min.js.gz"></script>
+<script src="js/md5.min.js.gz"></script>
+<script src="js/main.js"></script>
+</head>
+<body onload="showErrorMsg('                                            ');">
+<p></p>
+<div class="container">
+	<div class="row">
+	<form name="login" id="login" action="login.html" method="post">
+		<input type="hidden" name="challenge" id="challenge" value="01234567890123456789012345678901" />
+		<input type="hidden" name="hashpw" id="hashpw" value="" />
+		<label for="userid">User name</label>
+  		<input type="text" class="u-full-width" name="userid" id="userid" maxlength="20" autofocus />
+  		<label for="password">Password</label>
+  		<input type="password" class="u-full-width" name="password" id="password" maxlength="20" />
+		<input class="button-primary" type="submit" value="Login" />
+		<div class="errorMessage" id="errorMsg"></div>
+		<div class="infoMessage" id="infoMsg"></div>
+	</form>
+</div>
+<script>
+	$("#login").submit(function( event ) {
+		var user = "" + $("#userid").val();
+		if ( user.length<1 ) {
+			showErrorMsg("Error: User ID cannot be empty!");
+			$("#userid").focus();
+			return false;
+	  	}
+	  	var pw = "" + $("#password").val();
+		if ( pw.length<8 ) {
+			showErrorMsg("Error: Password must has minimum 8 characters!");
+			$("#password").focus();
+	  		return false;
+	  	}
+	  	$("#hashpw").val( md5(user+$("#challenge").val()+pw) );
+	  	console.log($("#hashpw").val());
+	  	$("#password").val("")
+	  	return true;
+  	});
+</script>
+</body>
+</html>
