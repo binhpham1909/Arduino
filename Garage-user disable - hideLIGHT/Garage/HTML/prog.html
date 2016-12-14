@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>INPUT / OUTPUT</title>
+<meta name="description" content="">
+<meta name="author" content="Binh Pham Huu">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="stylesheet" href="css/normalize.css">
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/main.css">
+<script src="js/jquery-3.1.0.min.js.gz"></script>
+<script src="js/main.js"></script>
+<script src="js/ioPinMaps.js"></script>
+<style>
+	div#inputSession {
+	  display:none;
+	}
+	div#outputSession {
+	  display:none;
+	}
+	.inlineBlock {
+	  display:inline-block;
+	  vertical-align: middle;
+	}
+</style>
+</head>
+<body>
+<script>
+
+function getData() {
+	$.getJSON("/getgpio", function(data) {
+		$.each(data, function(index, element) {
+			$("#"+index).prop("checked", element!=0);
+		});
+		$("#updateTime").html(currentDateTime());
+	});
+}
+function generateGPIO(pins,sessionName,rowName,prefix,reg) {
+	var bFirst = true;
+	var mainRowDiv = $(rowName);
+	var s = mainRowDiv.html();
+	$.each(pins, function(name, val) {
+		if(val!=12&&val!=13&&val!=0){
+			var sn = s.replace(reg,prefix+val);
+			if ( bFirst ) {
+				mainRowDiv.html(sn);
+				$(sessionName).show();
+				bFirst = false;
+			} else {
+				mainRowDiv.append(sn);
+			}
+			$("#"+prefix+val+"Name").html(name + ": ");		
+		}
+	});
+	$("#gpi4Name").html("Zone 1");
+	$("#gpi4L").addClass("openClose");
+	$("#gpi5Name").html("Zone 2");
+	$("#gpi5L").addClass("openClose");
+	$("#gpi14Name").html("LOW BATT");
+	$("#gpi14L").addClass("okLowBatt");
+	$("#gpo2Name").html("Set");
+	$("#gpo2").html("Prog");
+}
+$(function() {	
+	generateGPIO(inputPins,"#inputSession","#mainRowInput","gpi",/gpi0/g);
+	generateGPIO(buttonPins,"#outputSession","#mainRowButton","gpo",/gpo1/g);
+	getData();
+	setInterval(function() { getData();	}, 2000);
+	$(document).on('mouseup touchend','.press',function(){
+		showInfoMsg($(this).val());
+		var s = "" + $(this).attr('id');
+		s = s.substring(3,s.length);
+		var o = new Object;
+		o[s]=1;
+		$.getJSON("/setgpio", o, function(data) {}); 
+		setTimeout(function() {
+			o[s]=0;
+			$.getJSON("/setgpio", o, function(data) {}); 			
+		}, 800);
+	});
+	$.getJSON("/getdeviceinfo", function(obj) {
+		try {
+			$("#titleBar").html(obj["name"]);
+		} catch (err) {
+			showErrorMsg(err.message);
+		}
+	});
+});
+</script>
+<p></p>
+<form>
+<div class="container">
+	<div class="row">
+		<a href="admin.html" class="button button-primary backButton">&lt;</a>
+		<span class="titleBar" id="titleBar">My Bedroom</span>
+	</div>	
+	<div class="row" id="inputSession">
+	<fieldset class="withBorder">
+	<legend class="withBorder">Zone Inputs</legend>
+	<div id="mainRowInput">
+		<div style="height: 45px;"><span class="inlineBlock"><label for="gpi0" id="gpi0Name" style="width: 100px;">GPIO-0:</label></span>
+		<span class="inlineBlock"><div class="onoff-switch">
+		    <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="gpi0" disabled style="display:none;" />
+		    <label class="onoffswitch-label" for="gpi0">
+		        <span class="onoffswitch-inner" id="gpi0L"></span><span class="onoffswitch-switch"></span>
+		    </label>
+		</div></span>
+		</div>
+	</div>
+	</fieldset>
+	</div>
+	<div class="row" id="outputSession">
+	<fieldset class="withBorder">
+    <legend class="withBorder">Control</legend>
+	<span class="inlineBlock" style="float:left;"><label for="gpo1Name" id="gpo1Name" style="width: 90px; line-height:98px;">Level:</label>
+	<div id="mainRowButton" style="float:right;">
+    	<div style="height: 98px; margin-top: 15px; float:left;"></span>
+		<a href="#" class="button button-primary press" id="gpo1">gpo1</a>
+		&nbsp;&nbsp;&nbsp;&nbsp;
+		</div>
+	</div>
+	<p style="height:15px;"></p>
+	</fieldset>
+	</div>
+	<div class="row">
+	<div class="errorMessage" id="errorMsg"></div>
+	<div class="infoMessage" id="infoMsg"></div>
+	</div>
+	<div class="row">Last udpate: <span id="updateTime">22/12/2016 12:27:20</span></div>
+</div>
+</form>
+</body>
+</html>
