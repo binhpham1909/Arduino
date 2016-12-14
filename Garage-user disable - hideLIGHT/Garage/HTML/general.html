@@ -104,7 +104,7 @@ function BuildHtml() {
 	mainRowDiv.html(s1);
 	$.each(outputPins, function(name, val) {
 		var sn = s1.replace(/gpio3/g,"gpio"+val);
-		if(val!=2){
+		if(val!=2&&val!=15){
 			if ( bFirst ) {
 				mainRowDiv.html(sn);
 				mainRowDiv.show();
@@ -114,7 +114,6 @@ function BuildHtml() {
 			}
 			$("#gpio"+val+"Name").html(name);		
 			$("#gpio14Name").html("FAN");
-			$("#gpio15Name").html("LIGHT");
 			$("#gpio99Name").html("ARM");
 		}
 	});

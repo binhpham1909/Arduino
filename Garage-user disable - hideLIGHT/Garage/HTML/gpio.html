@@ -42,7 +42,7 @@ function generateGPIO(pins,sessionName,rowName,prefix,reg) {
 	var mainRowDiv = $(rowName);
 	var s = mainRowDiv.html();
 	$.each(pins, function(name, val) {
-		if(val!=2&&val!=0){
+		if(val!=2&&val!=0&&val!=15){
 			var sn = s.replace(reg,prefix+val);
 			if ( bFirst ) {
 				mainRowDiv.html(sn);
@@ -65,7 +65,6 @@ function generateGPIO(pins,sessionName,rowName,prefix,reg) {
 	$("#gpo12").html("Door 1");
 	$("#gpo13Name").html("Level");
 	$("#gpo13").html("Door 2");
-	$("#gpo15Name").html("LIGHT");
 	$("#gpo99Name").html("Alarm");
 	$("#gpo99L").addClass("armedDisarmed");
 	$("#gpo99L").addClass("redBgrd-inner");
