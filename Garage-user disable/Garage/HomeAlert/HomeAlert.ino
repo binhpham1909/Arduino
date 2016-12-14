@@ -46,6 +46,7 @@
 int g_inputPins[INPUT_PIN_COUNT]={4, 5, 14};
 int g_outputPins[OUTPUT_PIN_COUNT]={15};
 int g_buttonPins[BUTTON_PIN_COUNT]={12, 13, 2};
+int g_ProgButton = 2;
 int g_ARM_INPUT_PIN = 5;
 int g_ARM_OFF_PIN = 99; // virtual pin for toggle off ARM
 int g_BELL_PIN = 16;
@@ -238,7 +239,7 @@ void loop ( void ) {
             }          
         }
     }
-    
+  g_pServer->checkProgButton();
   if (g_pServer) g_pServer->handleClient();
 
   if ( g_IsAPMode ) {
@@ -362,6 +363,7 @@ void SetupGPIO() {
   for (i=0; i<BUTTON_PIN_COUNT; i++) {
     delay(0);
     pinMode(g_buttonPins[i], OUTPUT);
+    if(g_buttonPins[i]==g_ProgButton){    digitalWrite(g_buttonPins[i], HIGH);}
   }
 
 }

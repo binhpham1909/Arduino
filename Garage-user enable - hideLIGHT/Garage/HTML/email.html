@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>General Settings</title>
+<meta name="description" content="">
+<meta name="author" content="Binh Pham Huu">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="stylesheet" href="css/normalize.css">
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/main.css">
+<script src="js/jquery-3.1.0.min.js.gz"></script>
+<script src="js/main.js"></script>
+<script src="js/ioPinMaps.js"></script>
+<style>
+input[type=email], input[type=text], input[type=password], textarea {
+    display:inline-block;
+	width: calc(100% - 150px);
+}
+label {
+    display:inline-block;
+    width: 140px;
+}
+label.textArea {
+    vertical-align: top;
+}
+.blank {
+    display:inline-block;
+    float: left;
+    width: 142px;
+}
+input[type=number] {
+	width: 80px;
+}
+input[type=checkbox] {
+    vertical-align: middle;
+    position: relative;
+    width: 20px;
+}
+label.forCheckBox {
+    float: none;
+    width: initial;
+	vertical-align: middle;
+    margin-bottom: 15px;
+}
+.rowId {
+	display: none;
+}
+</style>
+</head>
+<body>
+<p></p>
+<div class="container">
+	<div class="row">
+		<a href="admin.html" class="button button-primary backButton">&lt;</a>
+		<span class="titleBar">Email / SMS</span>
+	</div>
+	<div class="row">
+		<form name="frmEmail" id="frmEmail">
+		<div id="r0" class="rowId"><label for="gpi0" class="textArea"><span id="gpi0Name">GPIO-0</span></label> <textarea rows="2" id="gpi0" name="gpi0" autofocus></textarea><label for="gpi00" class="textArea"><span id="gpi00Name"></span></label> <textarea rows="2" id="gpi00" name="gpi00"></textarea></div>
+		<div id="r1" class="rowId"><label for="gpi1" class="textArea"><span id="gpi1Name">GPIO-1</span></label> <textarea rows="2" id="gpi1" name="gpi1"></textarea><label for="gpi10" class="textArea"><span id="gpi10Name"></span></label> <textarea rows="2" id="gpi10" name="gpi10"></textarea></div>
+		<div id="r2" class="rowId"><label for="gpi2" class="textArea"><span id="gpi2Name">GPIO-2</span></label> <textarea rows="2" id="gpi2" name="gpi2"></textarea><label for="gpi20" class="textArea"><span id="gpi20Name"></span></label> <textarea rows="2" id="gpi20" name="gpi20"></textarea></div>
+		<div><label for="txtEmail">Alarm CMS</label> <input type="email" name="txtEmail" id="txtEmail" placeholder="john@sample.com" /></div>
+		<div><span class="blank">&nbsp;</span><input type="checkbox" name="enaEmail" id="enaEmail" /><label for="enaEmail" class="forCheckBox">Enabled email</label></div>
+		<div><label for="txtPhone">SMS Notification</label> <input type="text" name="txtPhone" id="txtPhone" placeholder="(408) 123-4567" /></div>
+		<div><span class="blank">&nbsp;</span><input type="checkbox" name="enaPhone" id="enaPhone" /> <label for="enaPhone" class="forCheckBox">Enabled SMS</label></div>
+		<div><label for="smsCount">SMS Count</label> <input type="number" name="smsCount" id="smsCount" min="0" max="99999"/></div>
+		<div><label for="smsAlert">SMS Alert</label> <input type="number" name="smsAlert" id="smsAlert" min="0" max="100"/></div>
+		<div><label for="smsRt">SMS RT</label> <input type="number" name="smsRt" id="smsRt" min="0" max="10"/></div>
+		<div><label for="smsInput">Max SMS Input</label> <input type="number" name="smsInput" id="smsInput" min="0" max="10" /></div>
+		<div><label for="apikey">Email API Key</label><span> <input type="password" name="apikey" id="apikey" maxlength="36" /></span></div>
+		<div><label for="sms_server">SMS Server</label> <input type="password" name="sms_server" id="sms_server" placeholder="SMS server"/></div>
+		<div><label for="sms_api_key">SMS API Key</label><span> <input type="password" name="sms_api_key" id="sms_api_key" maxlength="48" /></span></div>
+		<div><label for="sms_api_secret">SMS API SECRET</label><span> <input type="password" name="sms_api_secret" id="sms_api_secret" maxlength="48" /></span></div>
+		<input class="button-primary" type="submit" value="Save" name="btnSubmit" id="btnSubmit">
+		<div class="errorMessage" id="errorMsg"></div>
+		<div class="infoMessage" id="infoMsg"></div>
+		</form>
+	</div>
+</div>
+<script>
+function setFormData() {
+	$.getJSON("/getemailsms", function(data) {
+		$.each(data, function(name, value) {
+			if ( name!="role" ) {
+				if ( name.substring(0,3)=="ena" ) {
+					$("#"+name).prop("checked",value!=0);
+					var f = name.replace("ena","txt");
+					$("#"+f).prop("disabled",!value);
+				} else $("#"+name).val(value);
+			}
+		});
+		if ( data["role"]!=1 ) {
+			$("input").prop("disabled",true);
+			$("#enaEmail").prop("disabled",false);
+			$("#enaPhone").prop("disabled",false);
+			$("textarea").prop("disabled",false);
+			$("#txtEmail").prop("disabled",false);
+			$("#txtPhone").prop("disabled",false);
+			$("#apikey").prop("disabled",false);
+			$("#sms_api_key").prop("disabled",false);
+			$("#sms_api_secret").prop("disabled",false);
+			$("#btnSubmit").prop("disabled",false);
+		}
+	});
+}
+
+$(function() {
+	var i=0;
+	$.each(inputPins, function(name, val) {
+		$("#gpi"+i+"Name").html(name);
+		$("#gpi0Name").html("Zone 1");
+		$("#gpi1Name").html("Zone 2");
+		$("#gpi2Name").html("LOW BATT");
+		$("#r"+i).show();
+		i++;
+	});
+	$("input[type='checkbox']").change(function() {
+		var name = "" + $(this).attr('name');
+		var val = !$(this).is(':checked');
+		name = name.replace("ena","txt");
+		$("#"+name).prop("disabled",val);
+	});
+	setFormData();
+});
+
+function isValidText(id,name) {
+	var v = $(id);
+	if ( v.val().length<1 ) {
+		showErrorMsg("Error: text for " + name + " cannot be empty!");
+		v.focus();
+		return false;
+	}
+	if ( v.val().length>=50 ) {
+		showErrorMsg("Error: text for " + name + " cannot exceed 50 characters!");
+		v.focus();
+		return false;
+	}
+	return true;
+}
+function isValidEmail(email) {
+	var e = email.val();
+	if ( e.length<1 && !$("#enaEmail").is(':checked') ) return true;
+	var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+	if ( !re.test(e) || e.length>30 ) {
+		showErrorMsg("Error: Invalid e-mail address!");
+		$("#enaEmail").prop("checked",true);
+		email.focus();
+		return false;
+	}
+	return true;
+}
+function isValidPhone(phone) {
+	var s = phone.val();
+	if ( s.length<1 && !$("#enaPhone").is(':checked') ) return true;
+	var re = /^[\+]?[1]?[\s-]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
+	if ( !re.test(s) || s.length>15 ) {
+		showErrorMsg("Error: Invalid phone number!");
+		$("#enaPhone").prop("checked",true);
+		phone.focus();
+		return false;
+	}
+	return true;
+}
+function isValidApiKey(key) {
+	var s = "" + key.val();
+	if ( s.length!=36 ) {
+		showErrorMsg("Error: Invalid API Key!");
+		key.focus();
+		return false;
+	}
+	return true;
+}
+$("#frmEmail").submit(function( event ) {
+	if ( !isValidText("#gpi0","Zone 1") ) return false;
+	if ( !isValidText("#gpi1","Zone 2") ) return false;
+	if ( !isValidText("#gpi2","LOW BATT") ) return false;
+	if ( !isValidText("#gpi00","Zone 1 Low") ) return false;
+	if ( !isValidText("#gpi10","Zone 2 Low") ) return false;
+	if ( !isValidText("#gpi20","LOW BATT Low") ) return false;
+	var email=$("#txtEmail");
+	if ( !isValidEmail(email) ) return false;
+	var phone=$("#txtPhone");
+	if ( !isValidPhone(phone) ) return false;
+	var smsCount = $("#smsCount");
+	var smsAlert = $("#smsAlert");
+	var smsRt = $("#smsRt");
+	var smsInput = $("#smsInput");
+	if ( !isValidNumber(smsCount,0,99999) ) return false;
+	if ( !isValidNumber(smsAlert,0,100) ) return false;
+	if ( !isValidNumber(smsRt,0,10) ) return false;	
+	if ( !isValidNumber(smsInput,0,10) ) return false;
+	var apikey = $("#apikey");
+	if ( !isValidApiKey(apikey) ) return false;
+	var data = new Object;
+	data["apikey"] = apikey.val();
+	data["power"] = $("#gpi0").val();
+	data["fault"] = $("#gpi1").val();
+	data["alarm"] = $("#gpi2").val();
+	data["powerlow"] = $("#gpi00").val();
+	data["faultlow"] = $("#gpi10").val();
+	data["alarmlow"] = $("#gpi20").val();
+	data["sms_server"] = $("#sms_server").val();
+	data["sms_api_key"] = $("#sms_api_key").val();
+	data["sms_api_secret"] = $("#sms_api_secret").val();
+	data["email"] = email.val();
+	data["emailEna"] = $("#enaEmail").is(':checked') ? 1 : 0;
+	data["phone"] = phone.val();
+	data["phoneEna"] = $("#enaPhone").is(':checked') ? 1 : 0;
+	data["smsCount"] = parseInt(smsCount.val());
+	data["smsAlert"] = parseInt(smsAlert.val());
+	data["smsRt"] = parseInt(smsRt.val());
+	data["smsInput"] = parseInt(smsInput.val());
+	$.getJSON("/setemailsms", data, function(rsl) {
+		try {
+			if ( rsl.status ) {
+				showInfoMsg("Data saved successfully.");
+			}
+		} catch (err) {
+			showErrorMsg(err.message);
+		}
+	});
+	return false;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Authentication SMS</title>
+<meta name="description" content="Login">
+<meta name="author" content="Anh Nguyen Tuan">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="stylesheet" href="css/normalize.css">
+<link rel="stylesheet" href="css/skeleton.css">
+<link rel="stylesheet" href="css/main.css">
+<script src="js/jquery-3.1.0.min.js.gz"></script>
+<script src="js/md5.min.js.gz"></script>
+<script src="js/main.js"></script>
+</head>
+<body onload="showErrorMsg('                                            ');">
+<p></p>
+<div class="container">
+	<div class="row">
+	<form name="login" id="login" action="authentication.html" method="post">
+		<input type="hidden" name="challenge" id="challenge" value="01234567890123456789012345678901" />
+		<input type="hidden" name="hashpw" id="hashpw" value="" />
+		<label for="otpkey">OTP key</label>
+  		<input type="text" class="u-full-width" name="otpkey" id="otpkey" maxlength="20" disabled />
+  		<label for="otpsecret">OTP Secret</label>
+  		<input type="text" class="u-full-width" name="otpsecret" id="otpsecret" maxlength="20" autofocus />
+		<input class="button-primary" type="submit" value="Confirm" />
+		<div class="errorMessage" id="errorMsg"></div>
+		<div class="infoMessage" id="infoMsg"></div>
+	</form>
+</div>
+<script>
+
+	$("#login").submit(function( event ) {
+		var pw = "" + $("#otpsecret").val();
+		if ( pw.length<1 ) {
+			showErrorMsg("Error: otpsecret must has minimum 1 characters!");
+			$("#otpsecret").focus();
+			return false;
+		}
+		
+	});
+	$(function() {
+		$.getJSON("/getotpkey", function(data) {
+			$("#otpkey").val(data['otpkey']);
+		});
+	});
+</script>
+</body>
+</html>
