@@ -1,0 +1,154 @@
+.onoffswitch {
+    position: relative; width: 110px;
+    -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
+}
+
+.onoffswitch-checkbox {
+    display: none;
+}
+
+.onoffswitch-label {
+    display: block; overflow: hidden; cursor: pointer;
+    border: 2px solid #999999; border-radius: 20px;
+}
+
+.onoffswitch-inner {
+    display: block; width: 200%; margin-left: -100%;
+    transition: margin 0.3s ease-in 0s;
+}
+
+.onoffswitch-inner:before, .onoffswitch-inner:after {
+    display: block; float: left; width: 50%; height: 30px; padding: 0; line-height: 30px;
+    font-size: 14px; color: white; font-family: Trebuchet, Arial, sans-serif; font-weight: bold;
+    box-sizing: border-box;
+}
+
+.onoffswitch-inner:before {
+    content: "ON";
+    padding-left: 10px;
+    background-color: #34A7C1; color: #FFFFFF;
+}
+
+.onoff1switch-inner:before {
+    content: "ON";
+    padding-left: 10px;
+    background-color: #E80F0F; color: #FFFFFF;
+}
+
+
+.onoffswitch-inner:after {
+    content: "OFF";
+    padding-right: 10px;
+    background-color: #EEEEEE; color: #999999;
+    text-align: right;
+}
+.alarmDisarm:before{
+	content: "Alarm";
+}
+.alarmDisarm:after{
+	content: "Disarm";
+}
+.armedDisarmed:before{
+	content: "Armed";
+}
+.armedDisarmed:after{
+	content: "Disarmed";
+}
+.openClose:before{
+	content: "Open";
+}
+.openClose:after{
+	content: "Closed";
+}
+.redBgrd-inner:before{
+	 background-color: #FF0000;
+}
+.redBgrd-inner:after{
+	 background-color: #EEEEEE;
+}
+.okLowBatt:before{
+	content: "OK";
+	background-color: #04ff00;
+}
+.okLowBatt:after{
+	content: "Low BATT";
+	background-color: #ffee00;
+}
+.onoffswitch-switch {
+    display: block; width: 18px; margin: 6px;
+    background: #FFFFFF;
+    position: absolute; top: 0; bottom: 0;
+    right: 76px;
+    border: 2px solid #999999; border-radius: 20px;
+    transition: all 0.3s ease-in 0s; 
+}
+
+.onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
+    margin-left: 0;
+}
+
+.onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-switch {
+    right: 0px; 
+}
+
+.onoffswitch-checkbox:disabled + .onoffswitch-label .onoffswitch-switch {
+	display: none;
+	transition: all 0s ease-in 0s;
+    -webkit-transition: none;
+    transition: none;
+}
+fieldset.withBorder {
+	border-width: 1px;
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-bottom: 10px;
+}
+legend.withBorder {
+	padding-left: 5px;
+	padding-right: 5px;
+	font-size: 110%;
+	color: #222;
+}
+.buttonWidth {
+	width: 100%;
+}
+.backButton {
+	width: 40px;
+	padding: 0px;
+	border: 0px;
+}
+.titleBar {
+	font-weight: 300;
+	font-size: 1.8rem;
+	letter-spacing: -.05rem; 
+	padding-left: 8px;
+}
+.errorMessage {
+	color: #ff0000;
+	display: none;
+	padding: 0;
+	margin-top: 0;
+}
+.infoMessage {
+	color: #006600;
+	display: none;
+	padding: 0;
+	margin-top: 0;
+}
+.press{
+	width:80px;
+	height:80px;
+	border-radius: 50%;
+	line-height: 80px;
+	box-sizing: border-box;
+	padding: 0px;
+}
+
+label {
+	display: inline-block;
+	vertical-align:middle; 
+}
+select, option {
+ width: 100%;
+ max-width: 100%;
+}
